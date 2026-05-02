@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Reporte de Prácticas Preprofesionales</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 40px; }
+        h1 { color: #1a56db; border-bottom: 2px solid #1a56db; }
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+        th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+        th { background-color: #1a56db; color: white; }
+        .footer { margin-top: 30px; font-size: 12px; text-align: center; color: #666; }
+    </style>
+</head>
+<body>
+    <h1>Reporte de Prácticas Preprofesionales</h1>
+    <p>Fecha de generación: {{fecha}}</p>
+    <table>
+        <thead>
+            <tr>
+                <th>Estudiante</th>
+                <th>Empresa</th>
+                <th>Oferta</th>
+                <th>Estado</th>
+                <th>Horas cumplidas</th>
+                <th>Evaluación</th>
+            </tr>
+        </thead>
+        <tbody>
+            {{#each data}}
+            <tr>
+                <td>{{this.estudiante.usuario.nombres}} {{this.estudiante.usuario.apellidos}}</td>
+                <td>{{this.oferta.empresa.razon_social}}</td>
+                <td>{{this.oferta.titulo}}</td>
+                <td>{{this.estado}}</td>
+                <td>{{this.seguimiento.horas_cumplidas}}/{{this.seguimiento.horas_totales}}</td>
+                <td>{{this.seguimiento.evaluacion}}</td>
+            </tr>
+            {{/each}}
+        </tbody>
+    </table>
+    <div class="footer">
+        <p>Sistema de Gestión de Prácticas y Tesis - Universidad Nacional de Trujillo</p>
+    </div>
+</body>
+</html>

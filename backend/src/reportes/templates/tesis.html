@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Reporte de Tesis</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 40px; }
+        h1 { color: #1a56db; border-bottom: 2px solid #1a56db; }
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+        th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+        th { background-color: #1a56db; color: white; }
+        .footer { margin-top: 30px; font-size: 12px; text-align: center; color: #666; }
+    </style>
+</head>
+<body>
+    <h1>Reporte de Tesis</h1>
+    <p>Fecha de generación: {{fecha}}</p>
+    <table>
+        <thead>
+            <tr>
+                <th>Título</th>
+                <th>Estudiante</th>
+                <th>Asesor Principal</th>
+                <th>Estado</th>
+                <th>Fecha Inicio</th>
+                <th>Nota Final</th>
+            </tr>
+        </thead>
+        <tbody>
+            {{#each data}}
+            <tr>
+                <td>{{this.titulo}}</td>
+                <td>{{this.estudiante.usuario.nombres}} {{this.estudiante.usuario.apellidos}}</td>
+                <td>{{this.asesor_principal.usuario.nombres}} {{this.asesor_principal.usuario.apellidos}}</td>
+                <td>{{this.estado}}</td>
+                <td>{{this.fecha_inicio}}</td>
+                <td>{{this.acta.nota_final}}</td>
+            </tr>
+            {{/each}}
+        </tbody>
+    </table>
+    <div class="footer">
+        <p>Sistema de Gestión de Prácticas y Tesis - Universidad Nacional de Trujillo</p>
+    </div>
+</body>
+</html>
