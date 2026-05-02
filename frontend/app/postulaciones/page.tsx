@@ -54,7 +54,8 @@ export default function GestionPostulacionesPage() {
       }
       return apiFetch<any>(url);
     },
-    enabled: !!user?.roles?.some(r => r === 'admin' || r === 'coordinador'),
+    // ✅ CORREGIDO: Tipo explícito para el parámetro 'r'
+    enabled: !!user?.roles?.some((r: string) => r === 'admin' || r === 'coordinador'),
   });
 
   // ✅ CORREGIDO: extraer el array correctamente (response?.data?.data)
@@ -108,7 +109,8 @@ export default function GestionPostulacionesPage() {
     }
   };
 
-  if (!user?.roles?.some(r => r === 'admin' || r === 'coordinador')) {
+  // ✅ CORREGIDO: Tipo explícito para el parámetro 'r'
+  if (!user?.roles?.some((r: string) => r === 'admin' || r === 'coordinador')) {
     return (
       <div className="flex items-center justify-center h-64">
         <div className="text-center">

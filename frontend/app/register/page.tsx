@@ -6,7 +6,7 @@ import { GraduationCap, Mail, Lock, Eye, EyeOff, ArrowRight, User, Phone, Shield
 import Link from 'next/link';
 
 export default function RegisterPage() {
-  const { register, isLoading } = useAuth();
+  const { register: registerUser, isLoading } = useAuth();  // ✅ CORREGIDO
   const [formData, setFormData] = useState({
     email: '',
     password: '',
@@ -28,9 +28,9 @@ export default function RegisterPage() {
     try {
       const dataToSend = {
         ...formData,
-        escuela_id: 1, // Temporal, luego se puede seleccionar
+        escuela_id: 1,
       };
-      await register(dataToSend);
+      await registerUser(dataToSend);
       setSuccess(true);
       setTimeout(() => {
         setSuccess(false);

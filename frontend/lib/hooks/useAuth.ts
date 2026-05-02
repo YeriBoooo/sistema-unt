@@ -43,7 +43,6 @@ export function useAuth() {
     queryFn: async () => {
       try {
         const response = await apiFetch<any>('/auth/me');
-        // El usuario está en response.data
         return response?.data || null;
       } catch (error) {
         return null;
@@ -59,19 +58,33 @@ export function useAuth() {
         method: 'POST',
         body: JSON.stringify(credentials),
       });
-      console.log('🔍 Respuesta login:', response);
-      // ✅ CORREGIDO: el usuario está en response.data.user
       return response?.data?.user || response?.data;
     },
     onSuccess: (userData) => {
-      console.log('✅ userData recibido:', userData);
       if (userData) {
         queryClient.setQueryData(['me'], userData);
         router.push('/dashboard');
       }
     },
     onError: (error: Error) => {
-      console.error('❌ Login error:', error.message);
+      console.error('Login error:', error.message);
+    },
+  });
+
+  // ✅ AGREGAR REGISTER MUTATION
+  const registerMutation = useMutation({
+    mutationFn: async (data: any) => {
+      const response = await apiFetch<any>('/auth/register', {
+        method: 'POST',
+        body: JSON.stringify(data),
+      });
+      return response?.data;
+    },
+    onSuccess: () => {
+      // El registro fue exitoso
+    },
+    onError: (error: Error) => {
+      console.error('Register error:', error.message);
     },
   });
 
@@ -90,6 +103,7 @@ export function useAuth() {
     isLoading: isUserLoading,
     isLoginLoading: loginMutation.isPending,
     login: loginMutation.mutateAsync,
+    register: registerMutation.mutateAsync,  // ✅ EXPORTAR REGISTER
     logout: logoutMutation.mutateAsync,
     isAuthenticated: !!user,
   };
