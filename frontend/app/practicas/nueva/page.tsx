@@ -14,7 +14,6 @@ import {
   Calendar, 
   Users, 
   MapPin, 
-  FileText,
   CheckCircle
 } from 'lucide-react';
 import { toast } from 'sonner';
@@ -52,10 +51,17 @@ export default function NuevaOfertaPage() {
     e.preventDefault();
     setIsSubmitting(true);
 
+    // ✅ Convertir números a Int
+    const dataToSend = {
+      ...formData,
+      empresa_id: Number(formData.empresa_id),
+      vacantes: Number(formData.vacantes),
+    };
+
     try {
       await apiFetch('/ofertas', {
         method: 'POST',
-        body: JSON.stringify(formData),
+        body: JSON.stringify(dataToSend),
       });
       toast.success('✅ Oferta creada exitosamente');
       queryClient.invalidateQueries({ queryKey: ['ofertas'] });
