@@ -5,7 +5,7 @@ import { apiFetch } from '@/lib/api/client';
 import { useParams, useRouter } from 'next/navigation';
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { ArrowLeft, Loader2, Save, Mail, Phone, GraduationCap } from 'lucide-react';
+import { ArrowLeft, Loader2, Save, Mail, Phone, GraduationCap, School } from 'lucide-react';
 import { toast } from 'sonner';
 
 export default function EditarEstudiantePage() {
@@ -21,6 +21,7 @@ export default function EditarEstudiantePage() {
     telefono: '',
     codigo_universitario: '',
     ciclo: '',
+    escuela_id: 1,
   });
 
   // Cargar datos del estudiante
@@ -41,34 +42,46 @@ export default function EditarEstudiantePage() {
         telefono: estudiante.usuario?.telefono || '',
         codigo_universitario: estudiante.codigo_universitario || '',
         ciclo: estudiante.ciclo || '',
+        escuela_id: estudiante.escuela_id || 1,
       });
     }
   }, [estudiante]);
 
   const updateMutation = useMutation({
     mutationFn: async (data: typeof formData) => {
+      const payload = {
+        codigo_universitario: data.codigo_universitario,
+        ciclo: data.ciclo,
+        escuela_id: data.escuela_id,
+        usuario: {
+          nombres: data.nombres,
+          apellidos: data.apellidos,
+          email: data.email,
+          dni: data.dni,
+          telefono: data.telefono,
+        },
+      };
+      
+      console.log('📤 Enviando payload:', payload);
+      
       return apiFetch(`/estudiantes/${id}`, {
         method: 'PATCH',
-        body: JSON.stringify({
-          usuario: {
-            nombres: data.nombres,
-            apellidos: data.apellidos,
-            email: data.email,
-            dni: data.dni,
-            telefono: data.telefono,
-          },
-          codigo_universitario: data.codigo_universitario,
-          ciclo: data.ciclo,
-        }),
+        body: JSON.stringify(payload),
       });
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
+      console.log('✅ Respuesta:', data);
       toast.success('✅ Estudiante actualizado correctamente');
       queryClient.invalidateQueries({ queryKey: ['estudiantes'] });
+      queryClient.invalidateQueries({ queryKey: ['estudiante', id] });
       router.push('/estudiantes');
     },
     onError: (error: any) => {
-      toast.error('❌ Error al actualizar: ' + error.message);
+      console.error('❌ Error:', error);
+      toast.error('❌ Error al actualizar: ' + (error.message || 'Intenta nuevamente'));
+    },
+    onSettled: () => {
+      setIsSubmitting(false);
     },
   });
 
@@ -78,7 +91,7 @@ export default function EditarEstudiantePage() {
     updateMutation.mutate(formData);
   };
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
@@ -205,6 +218,26 @@ export default function EditarEstudiantePage() {
                   placeholder="Ej: IX"
                 />
               </div>
+            </div>
+          </div>
+
+          {/* Escuela */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Escuela *</label>
+            <div className="relative">
+              <School className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+              <select
+                name="escuela_id"
+                value={formData.escuela_id}
+                onChange={handleChange}
+                required
+                className="w-full pl-10 pr-4 py-2.5 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 appearance-none cursor-pointer bg-white"
+              >
+                <option value="1">Ingeniería de Sistemas</option>
+                <option value="2">Ingeniería Industrial</option>
+                <option value="3">Ingeniería Civil</option>
+                <option value="4">Arquitectura</option>
+              </select>
             </div>
           </div>
 
