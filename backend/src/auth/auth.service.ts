@@ -35,7 +35,6 @@ export class AuthService {
     const user = await this.validateUser(loginDto.email, loginDto.password);
     if (!user) throw new UnauthorizedException('Credenciales inválidas');
 
-    // Extraer roles como array de strings
     const roles = user.roles?.map(r => r.rol?.nombre) || [];
 
     const payload = {
@@ -45,14 +44,15 @@ export class AuthService {
     };
     const token = this.jwtService.sign(payload);
 
-    (res as any).cookie('access_token', token, {
+    // ✅ CONFIGURACIÓN CORREGIDA PARA PRODUCCIÓN
+    res.cookie('access_token', token, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'strict',
+      secure: true,           // ✅ Obligatorio para HTTPS
+      sameSite: 'none',       // ✅ Crucial para cross-origin (frontend en Vercel)
       maxAge: 7 * 24 * 60 * 60 * 1000,
+      path: '/',
     });
 
-    // Devolver usuario con formato limpio
     return {
       user: {
         id: user.id,
@@ -127,10 +127,8 @@ export class AuthService {
     });
     if (!user) throw new UnauthorizedException();
 
-    // Extraer roles como array de strings
     const roles = user.roles?.map(r => r.rol?.nombre) || [];
 
-    // Devolver usuario con formato limpio
     return {
       id: user.id,
       email: user.email,
@@ -161,7 +159,12 @@ export class AuthService {
   }
 
   async logout(res: Response) {
-    (res as any).clearCookie('access_token');
+    res.clearCookie('access_token', {
+      httpOnly: true,
+      secure: true,
+      sameSite: 'none',
+      path: '/',
+    });
     return { message: 'Sesión cerrada' };
   }
 

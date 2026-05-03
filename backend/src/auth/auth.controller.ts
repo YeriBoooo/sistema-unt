@@ -5,7 +5,7 @@ import { RegisterDto } from './dto/register.dto';
 import { ChangePasswordDto } from './dto/change-password.dto';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
 import { CurrentUser } from '../common/decorators/current-user.decorator';
-import type { Response, Request } from 'express'; // <-- CAMBIA a 'import type'
+import type { Response, Request } from 'express';
 
 @Controller('auth')
 export class AuthController {
@@ -13,7 +13,7 @@ export class AuthController {
 
   @Post('login')
   async login(@Body() loginDto: LoginDto, @Res({ passthrough: true }) res: Response) {
-    return this.authService.login(loginDto, res as any);
+    return this.authService.login(loginDto, res);
   }
 
   @Post('register')
@@ -36,6 +36,6 @@ export class AuthController {
   @Post('logout')
   @UseGuards(JwtAuthGuard)
   logout(@Res({ passthrough: true }) res: Response) {
-    return this.authService.logout(res as any);
+    return this.authService.logout(res);
   }
 }
