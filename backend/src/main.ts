@@ -20,9 +20,18 @@ async function bootstrap() {
     prefix: '/uploads/',
   });
 
+  // ✅ CORS configurado para producción y desarrollo
   app.enableCors({
-    origin: process.env.FRONTEND_URL || 'http://localhost:3000',
+    origin: [
+      'http://localhost:3000',
+      'http://localhost:3001',
+      'https://sistema-unt.vercel.app',
+      'https://sistema-unt-git-main-yeriboooos-projects.vercel.app',
+      'https://sistema-unt-production.up.railway.app'
+    ],
     credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'Cookie'],
   });
 
   await app.listen(process.env.PORT || 3000);
