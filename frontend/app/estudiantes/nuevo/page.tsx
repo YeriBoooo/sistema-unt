@@ -1,11 +1,11 @@
 'use client';
 
-import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQueryClient, useQuery } from '@tanstack/react-query';
 import { apiFetch } from '@/lib/api/client';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import Link from 'next/link';
-import { ArrowLeft, Loader2, Save, Mail, Phone, GraduationCap } from 'lucide-react';
+import { ArrowLeft, Loader2, Save, Mail, Phone, GraduationCap, School } from 'lucide-react';
 import { toast } from 'sonner';
 
 export default function NuevoEstudiantePage() {
@@ -21,15 +21,32 @@ export default function NuevoEstudiantePage() {
     codigo_universitario: '',
     ciclo: '',
     password: '',
+    escuela_id: 1,
   });
+
+  // Cargar lista de escuelas
+  const { data: escuelasData } = useQuery({
+    queryKey: ['escuelas'],
+    queryFn: () => apiFetch<any[]>('/escuelas'),
+  });
+
+  const escuelas = (() => {
+    const raw = escuelasData as any;
+    if (!raw) return [];
+    if (Array.isArray(raw)) return raw;
+    if (raw?.data && Array.isArray(raw.data)) return raw.data;
+    if (raw?.data?.data && Array.isArray(raw.data.data)) return raw.data.data;
+    return [];
+  })();
 
   const createMutation = useMutation({
     mutationFn: async (data: typeof formData) => {
-      return apiFetch('/estudiantes', {  // ✅ POST a la ruta correcta
+      return apiFetch('/estudiantes', {
         method: 'POST',
         body: JSON.stringify({
           codigo_universitario: data.codigo_universitario,
           ciclo: data.ciclo,
+          escuela_id: data.escuela_id,
           usuario: {
             nombres: data.nombres,
             apellidos: data.apellidos,
@@ -148,30 +165,57 @@ export default function NuevoEstudiantePage() {
             </div>
           </div>
 
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Teléfono</label>
-            <div className="relative">
-              <Phone className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-              <input
-                type="text"
-                value={formData.telefono}
-                onChange={(e) => setFormData({ ...formData, telefono: e.target.value })}
-                className="w-full pl-9 pr-3 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500"
-              />
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Teléfono</label>
+              <div className="relative">
+                <Phone className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+                <input
+                  type="text"
+                  value={formData.telefono}
+                  onChange={(e) => setFormData({ ...formData, telefono: e.target.value })}
+                  className="w-full pl-9 pr-3 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Ciclo</label>
+              <div className="relative">
+                <GraduationCap className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+                <input
+                  type="text"
+                  value={formData.ciclo}
+                  onChange={(e) => setFormData({ ...formData, ciclo: e.target.value })}
+                  placeholder="Ej: IX"
+                  className="w-full pl-9 pr-3 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
             </div>
           </div>
 
+          {/* Escuela */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Ciclo</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Escuela *</label>
             <div className="relative">
-              <GraduationCap className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-              <input
-                type="text"
-                value={formData.ciclo}
-                onChange={(e) => setFormData({ ...formData, ciclo: e.target.value })}
-                placeholder="Ej: IX"
-                className="w-full pl-9 pr-3 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500"
-              />
+              <School className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+              <select
+                name="escuela_id"
+                value={formData.escuela_id}
+                onChange={(e) => setFormData({ ...formData, escuela_id: parseInt(e.target.value) })}
+                required
+                className="w-full pl-10 pr-4 py-2.5 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 appearance-none cursor-pointer bg-white"
+              >
+                {escuelas.length === 0 ? (
+                  <option value="">Cargando escuelas...</option>
+                ) : (
+                  escuelas.map((escuela: any) => (
+                    <option key={escuela.id} value={escuela.id}>
+                      {escuela.nombre}
+                    </option>
+                  ))
+                )}
+              </select>
             </div>
           </div>
 
