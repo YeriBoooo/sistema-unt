@@ -5,6 +5,7 @@ import { apiFetch } from '@/lib/api/client';
 import { useParams, useRouter } from 'next/navigation';
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
+import { ArrowLeft, Loader2, Save, Mail, Phone, GraduationCap } from 'lucide-react';
 import { toast } from 'sonner';
 
 export default function EditarEstudiantePage() {
@@ -13,47 +14,201 @@ export default function EditarEstudiantePage() {
   const queryClient = useQueryClient();
   const [nombres, setNombres] = useState('');
   const [apellidos, setApellidos] = useState('');
-  const [isLoading, setIsLoading] = useState(true);
+  const [email, setEmail] = useState('');
+  const [dni, setDni] = useState('');
+  const [telefono, setTelefono] = useState('');
+  const [codigo_universitario, setCodigoUniversitario] = useState('');
+  const [ciclo, setCiclo] = useState('');
 
-  // Cargar datos
+  // Cargar datos del estudiante
+  const { data: response, isLoading } = useQuery({
+    queryKey: ['estudiante', id],
+    queryFn: () => apiFetch<any>(`/estudiantes/${id}`),
+  });
+
+  const estudiante = response?.data;
+
   useEffect(() => {
-    fetch(`/api/estudiantes/${id}`)
-      .then(r => r.json())
-      .then(data => {
-        setNombres(data.data?.usuario?.nombres || '');
-        setApellidos(data.data?.usuario?.apellidos || '');
-        setIsLoading(false);
-      })
-      .catch(() => setIsLoading(false));
-  }, [id]);
+    if (estudiante) {
+      setNombres(estudiante.usuario?.nombres || '');
+      setApellidos(estudiante.usuario?.apellidos || '');
+      setEmail(estudiante.usuario?.email || '');
+      setDni(estudiante.usuario?.dni || '');
+      setTelefono(estudiante.usuario?.telefono || '');
+      setCodigoUniversitario(estudiante.codigo_universitario || '');
+      setCiclo(estudiante.ciclo || '');
+    }
+  }, [estudiante]);
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    const res = await fetch(`/api/estudiantes/${id}`, {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ usuario: { nombres, apellidos } })
-    });
-    if (res.ok) {
-      toast.success('✅ Actualizado');
+  const updateMutation = useMutation({
+    mutationFn: async () => {
+      return apiFetch(`/estudiantes/${id}`, {
+        method: 'PATCH',
+        body: JSON.stringify({
+          usuario: {
+            nombres,
+            apellidos,
+            email,
+            dni,
+            telefono,
+          },
+          codigo_universitario,
+          ciclo,
+        }),
+      });
+    },
+    onSuccess: () => {
+      toast.success('✅ Estudiante actualizado correctamente');
       queryClient.invalidateQueries({ queryKey: ['estudiantes'] });
       router.push('/estudiantes');
-    } else {
-      toast.error('Error');
-    }
+    },
+    onError: (error: any) => {
+      toast.error('❌ Error al actualizar: ' + error.message);
+    },
+  });
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    updateMutation.mutate();
   };
 
-  if (isLoading) return <div>Cargando...</div>;
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <Loader2 className="h-8 w-8 animate-spin text-blue-500" />
+      </div>
+    );
+  }
+
+  if (!estudiante) {
+    return (
+      <div className="text-center py-12">
+        <p className="text-gray-500">Estudiante no encontrado</p>
+        <Link href="/estudiantes" className="text-blue-600 mt-2 inline-block">Volver a estudiantes</Link>
+      </div>
+    );
+  }
 
   return (
-    <div className="p-6">
-      <Link href="/estudiantes" className="text-blue-600">← Volver</Link>
-      <form onSubmit={handleSubmit} className="mt-4">
-        <h1 className="text-xl font-bold mb-4">Editar Estudiante</h1>
-        <input value={nombres} onChange={e => setNombres(e.target.value)} className="border p-2 w-full mb-2" placeholder="Nombres" />
-        <input value={apellidos} onChange={e => setApellidos(e.target.value)} className="border p-2 w-full mb-2" placeholder="Apellidos" />
-        <button type="submit" className="bg-blue-600 text-white px-4 py-2 rounded">Guardar</button>
-      </form>
+    <div className="max-w-2xl mx-auto px-4 py-6">
+      <Link href="/estudiantes" className="inline-flex items-center gap-1 text-sm text-gray-500 hover:text-gray-700 mb-4">
+        <ArrowLeft className="h-4 w-4" />
+        Volver a estudiantes
+      </Link>
+
+      <div className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
+        <div className="p-6 border-b border-gray-100 bg-gradient-to-r from-blue-50/50 to-indigo-50/50">
+          <h1 className="text-xl font-semibold text-gray-800">Editar estudiante</h1>
+          <p className="text-sm text-gray-500 mt-1">Actualiza los datos del estudiante</p>
+        </div>
+
+        <form onSubmit={handleSubmit} className="p-6 space-y-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Nombres *</label>
+              <input
+                type="text"
+                value={nombres}
+                onChange={(e) => setNombres(e.target.value)}
+                className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500"
+                required
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Apellidos *</label>
+              <input
+                type="text"
+                value={apellidos}
+                onChange={(e) => setApellidos(e.target.value)}
+                className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500"
+                required
+              />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Email *</label>
+              <div className="relative">
+                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+                <input
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  className="w-full pl-9 pr-3 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500"
+                  required
+                />
+              </div>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">DNI *</label>
+              <input
+                type="text"
+                value={dni}
+                onChange={(e) => setDni(e.target.value)}
+                className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500"
+                required
+              />
+            </div>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Teléfono</label>
+            <div className="relative">
+              <Phone className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+              <input
+                type="text"
+                value={telefono}
+                onChange={(e) => setTelefono(e.target.value)}
+                className="w-full pl-9 pr-3 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500"
+              />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Código universitario *</label>
+              <input
+                type="text"
+                value={codigo_universitario}
+                onChange={(e) => setCodigoUniversitario(e.target.value)}
+                className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500"
+                required
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Ciclo</label>
+              <div className="relative">
+                <GraduationCap className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+                <input
+                  type="text"
+                  value={ciclo}
+                  onChange={(e) => setCiclo(e.target.value)}
+                  className="w-full pl-9 pr-3 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500"
+                  placeholder="Ej: IX"
+                />
+              </div>
+            </div>
+          </div>
+
+          <div className="flex justify-end gap-3 pt-4">
+            <Link
+              href="/estudiantes"
+              className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors"
+            >
+              Cancelar
+            </Link>
+            <button
+              type="submit"
+              disabled={updateMutation.isPending}
+              className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 flex items-center gap-2"
+            >
+              {updateMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+              Guardar cambios
+            </button>
+          </div>
+        </form>
+      </div>
     </div>
   );
 }
