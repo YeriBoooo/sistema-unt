@@ -25,7 +25,7 @@ export default function NuevoEstudiantePage() {
 
   const createMutation = useMutation({
     mutationFn: async (data: typeof formData) => {
-      return apiFetch('/estudiantes', {
+      return apiFetch('/estudiantes', {  // ✅ POST a la ruta correcta
         method: 'POST',
         body: JSON.stringify({
           codigo_universitario: data.codigo_universitario,
