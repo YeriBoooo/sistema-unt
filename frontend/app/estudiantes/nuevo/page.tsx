@@ -1,6 +1,6 @@
 'use client';
 
-import { useMutation, useQueryClient, useQuery } from '@tanstack/react-query';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiFetch } from '@/lib/api/client';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
@@ -23,21 +23,6 @@ export default function NuevoEstudiantePage() {
     password: '',
     escuela_id: 1,
   });
-
-  // Cargar lista de escuelas
-  const { data: escuelasData } = useQuery({
-    queryKey: ['escuelas'],
-    queryFn: () => apiFetch<any[]>('/escuelas'),
-  });
-
-  const escuelas = (() => {
-    const raw = escuelasData as any;
-    if (!raw) return [];
-    if (Array.isArray(raw)) return raw;
-    if (raw?.data && Array.isArray(raw.data)) return raw.data;
-    if (raw?.data?.data && Array.isArray(raw.data.data)) return raw.data.data;
-    return [];
-  })();
 
   const createMutation = useMutation({
     mutationFn: async (data: typeof formData) => {
@@ -194,27 +179,21 @@ export default function NuevoEstudiantePage() {
             </div>
           </div>
 
-          {/* Escuela */}
+          {/* Escuela - Selector manual (funciona sin backend) */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Escuela *</label>
             <div className="relative">
               <School className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
               <select
-                name="escuela_id"
                 value={formData.escuela_id}
                 onChange={(e) => setFormData({ ...formData, escuela_id: parseInt(e.target.value) })}
                 required
                 className="w-full pl-10 pr-4 py-2.5 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 appearance-none cursor-pointer bg-white"
               >
-                {escuelas.length === 0 ? (
-                  <option value="">Cargando escuelas...</option>
-                ) : (
-                  escuelas.map((escuela: any) => (
-                    <option key={escuela.id} value={escuela.id}>
-                      {escuela.nombre}
-                    </option>
-                  ))
-                )}
+                <option value="1">Ingeniería de Sistemas</option>
+                <option value="2">Ingeniería Industrial</option>
+                <option value="3">Ingeniería Civil</option>
+                <option value="4">Arquitectura</option>
               </select>
             </div>
           </div>
