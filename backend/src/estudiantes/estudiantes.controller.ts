@@ -30,13 +30,13 @@ export class EstudiantesController {
   }
 
   @Patch(':id')
-  @Roles('admin', 'coordinador')  // ✅ Permitir también a coordinadores
+  @Roles('admin', 'coordinador')
   update(@Param('id') id: string, @Body() updateEstudianteDto: UpdateEstudianteDto) {
     return this.estudiantesService.update(parseInt(id), updateEstudianteDto);
   }
 
   @Delete(':id')
-  @Roles('admin')  // ✅ Solo admin puede eliminar
+  @Roles('admin')
   remove(@Param('id') id: string) {
     return this.estudiantesService.remove(parseInt(id));
   }

@@ -1,9 +1,29 @@
-import { IsInt, IsOptional, IsString } from 'class-validator';
+import { IsInt, IsOptional, IsString, IsEmail, MinLength, ValidateNested } from 'class-validator';
+import { Type } from 'class-transformer';
+
+class UsuarioDto {
+  @IsString()
+  nombres: string;
+
+  @IsString()
+  apellidos: string;
+
+  @IsEmail()
+  email: string;
+
+  @IsString()
+  @MinLength(6)
+  password: string;
+
+  @IsString()
+  dni: string;
+
+  @IsOptional()
+  @IsString()
+  telefono?: string;
+}
 
 export class CreateEstudianteDto {
-  @IsInt()
-  usuario_id: number;
-
   @IsString()
   codigo_universitario: string;
 
@@ -17,4 +37,8 @@ export class CreateEstudianteDto {
   @IsOptional()
   @IsString()
   resolucion_practicas?: string;
+
+  @ValidateNested()
+  @Type(() => UsuarioDto)
+  usuario: UsuarioDto;
 }
