@@ -78,7 +78,7 @@ export default function OfertasPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [modalidadFilter, setModalidadFilter] = useState('');
 
-  // Verificar si el usuario puede crear ofertas (admin, coordinador o empresa)
+  // Verificar si el usuario puede crear ofertas
   const canCreateOffer = user?.roles?.includes('admin') || 
                          user?.roles?.includes('coordinador') || 
                          user?.roles?.includes('empresa');
