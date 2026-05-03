@@ -564,13 +564,6 @@ export default function DetalleTesisPage() {
               </div>
             )}
 
-            {/* Resumen */}
-            {tesis.resumen && (
-              <div className="p-6 border-b border-gray-100">
-                <p className="text-gray-600 leading-relaxed">{tesis.resumen}</p>
-              </div>
-            )}
-
             {/* Acta - visible para admin y asesor */}
             {(esAdmin || esAsesor) && (
               <div className="p-6 border-b border-gray-100 bg-purple-50/30">
