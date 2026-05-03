@@ -25,7 +25,8 @@ import {
   Award,
   Users,
   CheckCircle,
-  Loader2
+  Loader2,
+  Pencil
 } from 'lucide-react';
 
 interface OfertaDetalle {
@@ -103,6 +104,11 @@ export default function DetalleOfertaPage() {
   const [informe, setInforme] = useState('');
   const [mostrarFormulario, setMostrarFormulario] = useState(false);
 
+  // ✅ Verificar si puede editar
+  const canEdit = user?.roles?.includes('admin') || 
+                  user?.roles?.includes('coordinador') || 
+                  user?.roles?.includes('empresa');
+
   // ✅ 1. Obtener detalles de la oferta
   const { data: response, isLoading, refetch } = useQuery({
     queryKey: ['oferta', id],
@@ -127,7 +133,6 @@ export default function DetalleOfertaPage() {
     queryKey: ['mis-postulaciones-todas'],
     queryFn: async () => {
       const result = await apiFetch('/ofertas/mis-postulaciones');
-      // Normalizar: siempre devolver un array
       const responseData = result as any;
       const data = responseData?.data?.data || responseData?.data || responseData || [];
       return Array.isArray(data) ? data : [];
@@ -253,14 +258,26 @@ export default function DetalleOfertaPage() {
     <div className="min-h-screen bg-white">
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12">
         
-        {/* Navigation */}
-        <Link 
-          href="/practicas" 
-          className="inline-flex items-center gap-2 text-sm text-gray-400 hover:text-gray-600 transition-colors mb-8 group"
-        >
-          <ArrowLeft className="h-4 w-4 transition-transform group-hover:-translate-x-1" />
-          <span>Volver a prácticas</span>
-        </Link>
+        {/* Navigation con botón de edición */}
+        <div className="flex justify-between items-center mb-8">
+          <Link 
+            href="/practicas" 
+            className="inline-flex items-center gap-2 text-sm text-gray-400 hover:text-gray-600 transition-colors group"
+          >
+            <ArrowLeft className="h-4 w-4 transition-transform group-hover:-translate-x-1" />
+            <span>Volver a prácticas</span>
+          </Link>
+          
+          {/* ✅ Botón Editar - solo para admin/coordinador/empresa */}
+          {canEdit && (
+            <Link href={`/practicas/${oferta.id}/editar`}>
+              <button className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-colors shadow-sm">
+                <Pencil className="h-4 w-4" />
+                Editar oferta
+              </button>
+            </Link>
+          )}
+        </div>
 
         <motion.div
           initial="hidden"
