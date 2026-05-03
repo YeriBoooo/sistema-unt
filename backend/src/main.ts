@@ -15,20 +15,13 @@ async function bootstrap() {
   app.useGlobalInterceptors(new TransformInterceptor());
   app.use(cookieParser());
 
-  // ✅ IMPORTANTE: Servir archivos estáticos
   app.useStaticAssets(join(__dirname, '..', 'uploads'), {
     prefix: '/uploads/',
   });
 
-  // ✅ CORS configurado para producción y desarrollo
+  // ✅ CORS ABIERTO (TEMPORAL PARA PROBAR)
   app.enableCors({
-    origin: [
-      'http://localhost:3000',
-      'http://localhost:3001',
-      'https://sistema-unt.vercel.app',
-      'https://sistema-unt-git-main-yeriboooos-projects.vercel.app',
-      'https://sistema-unt-production.up.railway.app'
-    ],
+    origin: true,  // Permite cualquier origen
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization', 'Cookie'],
