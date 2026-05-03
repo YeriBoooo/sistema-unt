@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateEstudianteDto } from './dto/create-estudiante.dto';
 import { UpdateEstudianteDto } from './dto/update-estudiante.dto';
@@ -89,24 +89,57 @@ export class EstudiantesService {
     const { usuario, codigo_universitario, ciclo, escuela_id, resolucion_practicas } = updateDto;
 
     return this.prisma.$transaction(async (prisma) => {
+      // Si hay datos de usuario para actualizar
       if (usuario) {
         const estudianteActual = await prisma.estudiante.findUnique({
           where: { id },
           select: { usuario_id: true }
         });
 
-        await prisma.usuario.update({
-          where: { id: estudianteActual.usuario_id },
-          data: {
-            nombres: usuario.nombres,
-            apellidos: usuario.apellidos,
-            email: usuario.email,
-            dni: usuario.dni,
-            telefono: usuario.telefono,
+        // Verificar si el nuevo email ya existe en otro usuario
+        if (usuario.email) {
+          const existingEmail = await prisma.usuario.findFirst({
+            where: {
+              email: usuario.email,
+              id: { not: estudianteActual.usuario_id }
+            }
+          });
+          if (existingEmail) {
+            throw new BadRequestException('El email ya está registrado por otro usuario');
           }
-        });
+        }
+
+        // Verificar si el nuevo DNI ya existe en otro usuario
+        if (usuario.dni) {
+          const existingDni = await prisma.usuario.findFirst({
+            where: {
+              dni: usuario.dni,
+              id: { not: estudianteActual.usuario_id }
+            }
+          });
+          if (existingDni) {
+            throw new BadRequestException('El DNI ya está registrado por otro usuario');
+          }
+        }
+
+        // Construir objeto de actualización solo con campos presentes
+        const usuarioData: any = {};
+        if (usuario.nombres !== undefined) usuarioData.nombres = usuario.nombres;
+        if (usuario.apellidos !== undefined) usuarioData.apellidos = usuario.apellidos;
+        if (usuario.email !== undefined) usuarioData.email = usuario.email;
+        if (usuario.dni !== undefined) usuarioData.dni = usuario.dni;
+        if (usuario.telefono !== undefined) usuarioData.telefono = usuario.telefono;
+        // No actualizar password si no viene
+
+        if (Object.keys(usuarioData).length > 0) {
+          await prisma.usuario.update({
+            where: { id: estudianteActual.usuario_id },
+            data: usuarioData,
+          });
+        }
       }
 
+      // Actualizar datos del estudiante
       const estudiante = await prisma.estudiante.update({
         where: { id },
         data: {
