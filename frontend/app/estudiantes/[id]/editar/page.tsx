@@ -12,13 +12,16 @@ export default function EditarEstudiantePage() {
   const { id } = useParams();
   const router = useRouter();
   const queryClient = useQueryClient();
-  const [nombres, setNombres] = useState('');
-  const [apellidos, setApellidos] = useState('');
-  const [email, setEmail] = useState('');
-  const [dni, setDni] = useState('');
-  const [telefono, setTelefono] = useState('');
-  const [codigo_universitario, setCodigoUniversitario] = useState('');
-  const [ciclo, setCiclo] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [formData, setFormData] = useState({
+    nombres: '',
+    apellidos: '',
+    email: '',
+    dni: '',
+    telefono: '',
+    codigo_universitario: '',
+    ciclo: '',
+  });
 
   // Cargar datos del estudiante
   const { data: response, isLoading } = useQuery({
@@ -30,30 +33,32 @@ export default function EditarEstudiantePage() {
 
   useEffect(() => {
     if (estudiante) {
-      setNombres(estudiante.usuario?.nombres || '');
-      setApellidos(estudiante.usuario?.apellidos || '');
-      setEmail(estudiante.usuario?.email || '');
-      setDni(estudiante.usuario?.dni || '');
-      setTelefono(estudiante.usuario?.telefono || '');
-      setCodigoUniversitario(estudiante.codigo_universitario || '');
-      setCiclo(estudiante.ciclo || '');
+      setFormData({
+        nombres: estudiante.usuario?.nombres || '',
+        apellidos: estudiante.usuario?.apellidos || '',
+        email: estudiante.usuario?.email || '',
+        dni: estudiante.usuario?.dni || '',
+        telefono: estudiante.usuario?.telefono || '',
+        codigo_universitario: estudiante.codigo_universitario || '',
+        ciclo: estudiante.ciclo || '',
+      });
     }
   }, [estudiante]);
 
   const updateMutation = useMutation({
-    mutationFn: async () => {
+    mutationFn: async (data: typeof formData) => {
       return apiFetch(`/estudiantes/${id}`, {
         method: 'PATCH',
         body: JSON.stringify({
           usuario: {
-            nombres,
-            apellidos,
-            email,
-            dni,
-            telefono,
+            nombres: data.nombres,
+            apellidos: data.apellidos,
+            email: data.email,
+            dni: data.dni,
+            telefono: data.telefono,
           },
-          codigo_universitario,
-          ciclo,
+          codigo_universitario: data.codigo_universitario,
+          ciclo: data.ciclo,
         }),
       });
     },
@@ -69,7 +74,12 @@ export default function EditarEstudiantePage() {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    updateMutation.mutate();
+    setIsSubmitting(true);
+    updateMutation.mutate(formData);
+  };
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
   if (isLoading) {
@@ -108,8 +118,9 @@ export default function EditarEstudiantePage() {
               <label className="block text-sm font-medium text-gray-700 mb-1">Nombres *</label>
               <input
                 type="text"
-                value={nombres}
-                onChange={(e) => setNombres(e.target.value)}
+                name="nombres"
+                value={formData.nombres}
+                onChange={handleChange}
                 className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500"
                 required
               />
@@ -118,8 +129,9 @@ export default function EditarEstudiantePage() {
               <label className="block text-sm font-medium text-gray-700 mb-1">Apellidos *</label>
               <input
                 type="text"
-                value={apellidos}
-                onChange={(e) => setApellidos(e.target.value)}
+                name="apellidos"
+                value={formData.apellidos}
+                onChange={handleChange}
                 className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500"
                 required
               />
@@ -133,8 +145,9 @@ export default function EditarEstudiantePage() {
                 <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
                 <input
                   type="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
+                  name="email"
+                  value={formData.email}
+                  onChange={handleChange}
                   className="w-full pl-9 pr-3 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500"
                   required
                 />
@@ -144,8 +157,9 @@ export default function EditarEstudiantePage() {
               <label className="block text-sm font-medium text-gray-700 mb-1">DNI *</label>
               <input
                 type="text"
-                value={dni}
-                onChange={(e) => setDni(e.target.value)}
+                name="dni"
+                value={formData.dni}
+                onChange={handleChange}
                 className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500"
                 required
               />
@@ -158,8 +172,9 @@ export default function EditarEstudiantePage() {
               <Phone className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
               <input
                 type="text"
-                value={telefono}
-                onChange={(e) => setTelefono(e.target.value)}
+                name="telefono"
+                value={formData.telefono}
+                onChange={handleChange}
                 className="w-full pl-9 pr-3 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500"
               />
             </div>
@@ -170,8 +185,9 @@ export default function EditarEstudiantePage() {
               <label className="block text-sm font-medium text-gray-700 mb-1">Código universitario *</label>
               <input
                 type="text"
-                value={codigo_universitario}
-                onChange={(e) => setCodigoUniversitario(e.target.value)}
+                name="codigo_universitario"
+                value={formData.codigo_universitario}
+                onChange={handleChange}
                 className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500"
                 required
               />
@@ -182,8 +198,9 @@ export default function EditarEstudiantePage() {
                 <GraduationCap className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
                 <input
                   type="text"
-                  value={ciclo}
-                  onChange={(e) => setCiclo(e.target.value)}
+                  name="ciclo"
+                  value={formData.ciclo}
+                  onChange={handleChange}
                   className="w-full pl-9 pr-3 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500"
                   placeholder="Ej: IX"
                 />
@@ -200,10 +217,10 @@ export default function EditarEstudiantePage() {
             </Link>
             <button
               type="submit"
-              disabled={updateMutation.isPending}
+              disabled={isSubmitting}
               className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 flex items-center gap-2"
             >
-              {updateMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+              {isSubmitting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
               Guardar cambios
             </button>
           </div>
