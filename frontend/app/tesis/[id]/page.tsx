@@ -165,13 +165,15 @@ export default function DetalleTesisPage() {
   });
 
   const tesis: TesisDetalle | undefined = response?.data?.data || response?.data || response;
-  const estadoConfig = tesis ? getEstadoConfig(tesis.estado) : { label: '', color: '', icon: FileText, progress: 0 };
-  const EstadoIcon = estadoConfig.icon;
 
-  // Calcular progreso basado en avances aprobados
+  // ✅ Calcular progreso basado en avances aprobados
   const totalAvances = tesis?.avances?.length || 0;
   const avancesAprobados = tesis?.avances?.filter(a => a.estado === 'aprobado').length || 0;
   const progresoAvances = totalAvances > 0 ? (avancesAprobados / totalAvances) * 100 : 0;
+
+  // ✅ Estado de la tesis con progreso
+  const estadoConfig = tesis ? getEstadoConfig(tesis.estado) : { label: '', color: '', icon: FileText, progress: 0 };
+  const EstadoIcon = estadoConfig.icon;
 
   const revisarAvanceMutation = useMutation({
     mutationFn: async ({ avanceId, estado, observaciones }: { avanceId: number; estado: string; observaciones?: string }) => {
@@ -476,18 +478,18 @@ export default function DetalleTesisPage() {
               </div>
             </div>
 
-            {/* Barra de progreso general */}
+            {/* ✅ BARRA DE PROGRESO GENERAL */}
             <div className="px-6 py-4 border-b border-gray-100 bg-gradient-to-r from-blue-50/30 to-indigo-50/30">
               <div className="flex justify-between items-center mb-2">
                 <div className="flex items-center gap-2">
                   <BarChart3 className="h-4 w-4 text-blue-600" />
-                  <span className="text-xs font-semibold text-gray-700 uppercase">Progreso general</span>
+                  <span className="text-xs font-semibold text-gray-700 uppercase">Progreso general de la tesis</span>
                 </div>
                 <span className="text-sm font-bold text-blue-600">{Math.round(progresoAvances)}%</span>
               </div>
-              <div className="w-full bg-gray-200 rounded-full h-2">
+              <div className="w-full bg-gray-200 rounded-full h-2.5">
                 <div 
-                  className="bg-gradient-to-r from-blue-500 to-emerald-500 h-2 rounded-full transition-all duration-700"
+                  className="bg-gradient-to-r from-blue-500 to-emerald-500 h-2.5 rounded-full transition-all duration-700"
                   style={{ width: `${progresoAvances}%` }}
                 />
               </div>
@@ -497,10 +499,13 @@ export default function DetalleTesisPage() {
                 <span>Sustentación</span>
                 <span>Culminado</span>
               </div>
+              <p className="text-xs text-gray-500 mt-3">
+                {avancesAprobados} de {totalAvances} avances aprobados
+              </p>
             </div>
 
             {/* Info General */}
-            <div className="p-6 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 border-b border-gray-100">
+            <div className="p-6 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 border-b border-gray-100">
               <div className="flex items-center gap-3">
                 <Calendar className="h-4 w-4 text-gray-400" />
                 <div>
@@ -512,7 +517,7 @@ export default function DetalleTesisPage() {
                 <FileCheck className="h-4 w-4 text-gray-400" />
                 <div>
                   <p className="text-[10px] text-gray-400">Avances</p>
-                  <p className="text-sm text-gray-700">{avancesAprobados}/{totalAvances} aprobados</p>
+                  <p className="text-sm font-medium text-gray-700">{avancesAprobados}/{totalAvances} aprobados</p>
                 </div>
               </div>
             </div>
@@ -600,8 +605,10 @@ export default function DetalleTesisPage() {
             <div className="p-6">
               <div className="flex justify-between items-center flex-wrap gap-3 mb-5">
                 <div className="flex items-center gap-2"><BookOpen className="h-4 w-4 text-gray-400" /><h2 className="text-xs font-semibold text-gray-500 uppercase">Avances</h2></div>
+                
+                {/* ✅ BOTÓN SUBIR AVANCE - solo para estudiante */}
                 {esEstudiante && (
-                  <button onClick={() => setMostrarFormularioAvance(!mostrarFormularioAvance)} className="inline-flex items-center gap-1 px-3 py-1.5 bg-gray-800 text-white text-xs rounded-lg hover:bg-gray-900">
+                  <button onClick={() => setMostrarFormularioAvance(!mostrarFormularioAvance)} className="inline-flex items-center gap-1 px-3 py-1.5 bg-gray-800 text-white text-xs rounded-lg hover:bg-gray-900 transition-colors">
                     <Upload className="h-3 w-3" /> Subir avance
                   </button>
                 )}
@@ -638,8 +645,10 @@ export default function DetalleTesisPage() {
                             <span className="text-sm font-medium text-gray-800 capitalize">{avance.tipo}</span>
                             <span className={`text-[10px] font-medium px-2 py-0.5 rounded-full ${avanceConfig.color}`}>{avanceConfig.label}</span>
                           </div>
+                          
+                          {/* ✅ BOTÓN REVISAR AVANCE - solo para asesor */}
                           {esAsesor && avance.estado !== 'aprobado' && (
-                            <button onClick={() => abrirModalRevisar(avance)} className="inline-flex items-center gap-1 px-2 py-1 bg-blue-500 text-white text-xs rounded-lg hover:bg-blue-600">
+                            <button onClick={() => abrirModalRevisar(avance)} className="inline-flex items-center gap-1 px-2 py-1 bg-blue-500 text-white text-xs rounded-lg hover:bg-blue-600 transition-colors">
                               <Eye className="h-3 w-3" /> Revisar
                             </button>
                           )}
