@@ -106,8 +106,9 @@ export function Header() {
               </div>
               <div>
                 <p className="text-[11px] text-gray-500 leading-tight">Bienvenido de vuelta</p>
+                {/* ✅ CORREGIDO: Solo muestra el nombre, sin apellidos duplicados */}
                 <p className="text-sm sm:text-base font-semibold text-white leading-tight -mt-0.5">
-                  {user?.nombres} {user?.apellidos}
+                  {user?.nombres}
                 </p>
               </div>
             </div>
