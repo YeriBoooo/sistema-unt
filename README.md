@@ -159,4 +159,4 @@ cd frontend && npm run test:e2e
 
 ## Licencia
 
-Proyecto de uso académico — **Universidad Nacional de Trujillo**, Facultad de Ingeniería de Sistemas, 2025.
+Proyecto de uso académico — **Universidad Nacional de Trujillo**, Facultad de Ingeniería de Sistemas, 2026.
