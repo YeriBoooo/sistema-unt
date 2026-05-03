@@ -6,6 +6,25 @@ import { useParams, useRouter } from 'next/navigation';
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { Users, ArrowLeft, Save, Loader2, Mail, Phone, GraduationCap } from 'lucide-react';
+import { toast } from 'sonner';
+
+interface Estudiante {
+  id: number;
+  usuario_id: number;
+  codigo_universitario: string;
+  ciclo: string;
+  usuario: {
+    nombres: string;
+    apellidos: string;
+    email: string;
+    dni: string;
+    telefono: string;
+  };
+  escuela: {
+    id: number;
+    nombre: string;
+  };
+}
 
 export default function EditarEstudiantePage() {
   const { id } = useParams();
@@ -20,16 +39,18 @@ export default function EditarEstudiantePage() {
     codigo_universitario: '',
     ciclo: '',
   });
+  const [initialLoaded, setInitialLoaded] = useState(false);
 
   const { data: response, isLoading } = useQuery({
     queryKey: ['estudiante', id],
     queryFn: () => apiFetch<any>(`/estudiantes/${id}`),
   });
 
-  const estudiante = response?.data;
+  const estudiante: Estudiante | undefined = response?.data;
 
+  // ✅ CORREGIDO: Cargar datos cuando estén disponibles (sin condición que bloquee)
   useEffect(() => {
-    if (estudiante && !formData.nombres) {
+    if (estudiante && !initialLoaded) {
       setFormData({
         nombres: estudiante.usuario?.nombres || '',
         apellidos: estudiante.usuario?.apellidos || '',
@@ -39,23 +60,37 @@ export default function EditarEstudiantePage() {
         codigo_universitario: estudiante.codigo_universitario || '',
         ciclo: estudiante.ciclo || '',
       });
+      setInitialLoaded(true);
     }
-  }, [estudiante]);
+  }, [estudiante, initialLoaded]);
 
   const updateMutation = useMutation({
     mutationFn: async (data: any) => {
+      // ✅ Enviar en el formato que espera el backend
+      const payload = {
+        codigo_universitario: data.codigo_universitario,
+        ciclo: data.ciclo,
+        usuario: {
+          nombres: data.nombres,
+          apellidos: data.apellidos,
+          email: data.email,
+          dni: data.dni,
+          telefono: data.telefono,
+        },
+      };
       return apiFetch(`/estudiantes/${id}`, {
         method: 'PATCH',
-        body: JSON.stringify(data),
+        body: JSON.stringify(payload),
       });
     },
     onSuccess: () => {
-      alert('✅ Estudiante actualizado correctamente');
+      toast.success('✅ Estudiante actualizado correctamente');
       queryClient.invalidateQueries({ queryKey: ['estudiantes'] });
+      queryClient.invalidateQueries({ queryKey: ['estudiante', id] });
       router.push('/estudiantes');
     },
     onError: (error: any) => {
-      alert('❌ Error al actualizar: ' + error.message);
+      toast.error('❌ Error al actualizar: ' + (error.message || 'Intenta nuevamente'));
     },
   });
 
@@ -187,7 +222,10 @@ export default function EditarEstudiantePage() {
           </div>
 
           <div className="flex justify-end gap-3 pt-4">
-            <Link href="/estudiantes" className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200">
+            <Link
+              href="/estudiantes"
+              className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors"
+            >
               Cancelar
             </Link>
             <button
