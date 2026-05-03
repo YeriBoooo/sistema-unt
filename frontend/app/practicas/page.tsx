@@ -13,7 +13,8 @@ import {
   ChevronRight,
   Search,
   Sparkles,
-  Filter
+  Filter,
+  Plus
 } from 'lucide-react';
 import { useState } from 'react';
 
@@ -33,7 +34,7 @@ interface Oferta {
   };
 }
 
-// ✅ CORREGIDO - ease simplificado para evitar error de TypeScript
+// Animación
 const fadeUp = {
   hidden: { opacity: 0, y: 20 },
   visible: { opacity: 1, y: 0, transition: { duration: 0.4 } }
@@ -77,6 +78,11 @@ export default function OfertasPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [modalidadFilter, setModalidadFilter] = useState('');
 
+  // Verificar si el usuario puede crear ofertas (admin, coordinador o empresa)
+  const canCreateOffer = user?.roles?.includes('admin') || 
+                         user?.roles?.includes('coordinador') || 
+                         user?.roles?.includes('empresa');
+
   const { data: ofertasList, isLoading } = useQuery({
     queryKey: ['ofertas'],
     queryFn: () => apiFetch<any>('/ofertas?estado=abierta'),
@@ -109,7 +115,7 @@ export default function OfertasPage() {
     <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-50">
       <div className="max-w-7xl mx-auto px-4 py-8 sm:px-6 lg:px-8">
         
-        {/* Header */}
+        {/* Header con botón elegante */}
         <div className="mb-8">
           <div className="flex items-center gap-2 mb-3">
             <div className="h-2 w-2 rounded-full bg-[#E8A735] animate-pulse" />
@@ -117,6 +123,7 @@ export default function OfertasPage() {
               Portal de prácticas
             </span>
           </div>
+          
           <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4">
             <div>
               <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold bg-gradient-to-r from-[#0A1C2E] to-[#2a3c4e] bg-clip-text text-transparent tracking-tight">
@@ -126,9 +133,27 @@ export default function OfertasPage() {
                 Encuentra las mejores oportunidades para tu desarrollo profesional
               </p>
             </div>
-            <div className="flex items-center gap-2 text-sm text-gray-400 bg-white/80 backdrop-blur-sm px-4 py-2 rounded-full border border-gray-100 shadow-sm">
-              <Sparkles className="h-3.5 w-3.5 text-[#E8A735]" />
-              <span>{filteredOfertas.length} oportunidades disponibles</span>
+            
+            <div className="flex items-center gap-3">
+              {/* ✅ Botón elegante para crear oferta */}
+              {canCreateOffer && (
+                <Link href="/practicas/nueva">
+                  <motion.button
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.98 }}
+                    className="group relative overflow-hidden bg-gradient-to-r from-[#0A1C2E] to-[#1E3A5F] text-white px-5 py-2.5 rounded-xl text-sm font-medium shadow-lg hover:shadow-xl transition-all duration-300 flex items-center gap-2"
+                  >
+                    <div className="absolute inset-0 bg-gradient-to-r from-[#E8A735] to-[#D4A020] opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                    <Plus className="h-4 w-4 relative z-10 group-hover:rotate-90 transition-transform duration-300" />
+                    <span className="relative z-10">Nueva oferta</span>
+                  </motion.button>
+                </Link>
+              )}
+              
+              <div className="flex items-center gap-2 text-sm text-gray-400 bg-white/80 backdrop-blur-sm px-4 py-2 rounded-full border border-gray-100 shadow-sm">
+                <Sparkles className="h-3.5 w-3.5 text-[#E8A735]" />
+                <span>{filteredOfertas.length} oportunidades disponibles</span>
+              </div>
             </div>
           </div>
         </div>
@@ -172,6 +197,14 @@ export default function OfertasPage() {
             </div>
             <p className="text-gray-400 font-medium">No hay ofertas disponibles</p>
             <p className="text-sm text-gray-300 mt-1">Pronto se publicarán nuevas oportunidades</p>
+            {canCreateOffer && (
+              <Link href="/practicas/nueva">
+                <button className="mt-4 inline-flex items-center gap-2 px-4 py-2 bg-[#0A1C2E] text-white text-sm rounded-xl hover:bg-[#1E3A5F] transition-colors">
+                  <Plus className="h-4 w-4" />
+                  Crear primera oferta
+                </button>
+              </Link>
+            )}
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
