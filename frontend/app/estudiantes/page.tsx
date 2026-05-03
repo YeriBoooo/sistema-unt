@@ -41,12 +41,13 @@ export default function EstudiantesPage() {
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
 
+  // ✅ Agregar limit=100 para traer todos los estudiantes
   const { data: response, isLoading, refetch } = useQuery({
     queryKey: ['estudiantes'],
-    queryFn: () => apiFetch<any>('/estudiantes'),
+    queryFn: () => apiFetch<any>('/estudiantes?limit=100'),
   });
 
-  // ✅ Extraer el array correctamente (la estructura es data.data)
+  // ✅ Extraer estudiantes
   let estudiantes: Estudiante[] = [];
   const responseData = response as any;
 
@@ -65,14 +66,13 @@ export default function EstudiantesPage() {
     estudiante.codigo_universitario?.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  // ✅ Paginación
+  // ✅ Paginación local
   const totalPages = Math.ceil(filteredEstudiantes.length / itemsPerPage);
   const paginatedEstudiantes = filteredEstudiantes.slice(
     (currentPage - 1) * itemsPerPage,
     currentPage * itemsPerPage
   );
 
-  // ✅ Eliminar estudiante
   const handleDelete = async (id: number, nombre: string) => {
     if (!confirm(`¿Estás seguro de eliminar a ${nombre}?`)) return;
     
@@ -96,7 +96,6 @@ export default function EstudiantesPage() {
   return (
     <div className="min-h-screen bg-gray-50">
       <div className="px-4 py-6 sm:px-6">
-        {/* Header */}
         <div className="mb-6">
           <div className="flex justify-between items-center">
             <div>
@@ -113,7 +112,6 @@ export default function EstudiantesPage() {
           </div>
         </div>
 
-        {/* Search */}
         <div className="mb-6">
           <div className="relative max-w-md">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
@@ -130,7 +128,6 @@ export default function EstudiantesPage() {
           </div>
         </div>
 
-        {/* Table */}
         <div className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full">
@@ -195,25 +192,13 @@ export default function EstudiantesPage() {
                       </td>
                       <td className="px-4 py-3">
                         <div className="flex items-center gap-2">
-                          <Link
-                            href={`/estudiantes/${estudiante.id}`}
-                            className="p-1 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
-                            title="Ver detalles"
-                          >
+                          <Link href={`/estudiantes/${estudiante.id}`} className="p-1 text-blue-600 hover:bg-blue-50 rounded-lg">
                             <Eye className="h-4 w-4" />
                           </Link>
-                          <Link
-                            href={`/estudiantes/${estudiante.id}/editar`}
-                            className="p-1 text-green-600 hover:bg-green-50 rounded-lg transition-colors"
-                            title="Editar"
-                          >
+                          <Link href={`/estudiantes/${estudiante.id}/editar`} className="p-1 text-green-600 hover:bg-green-50 rounded-lg">
                             <Edit className="h-4 w-4" />
                           </Link>
-                          <button
-                            onClick={() => handleDelete(estudiante.id, `${estudiante.usuario?.nombres} ${estudiante.usuario?.apellidos}`)}
-                            className="p-1 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-                            title="Eliminar"
-                          >
+                          <button onClick={() => handleDelete(estudiante.id, `${estudiante.usuario?.nombres} ${estudiante.usuario?.apellidos}`)} className="p-1 text-red-600 hover:bg-red-50 rounded-lg">
                             <Trash2 className="h-4 w-4" />
                           </button>
                         </div>
@@ -226,24 +211,13 @@ export default function EstudiantesPage() {
           </div>
         </div>
 
-        {/* Paginación */}
         {totalPages > 1 && (
           <div className="flex justify-center items-center gap-2 mt-6">
-            <button
-              onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
-              disabled={currentPage === 1}
-              className="p-2 rounded-lg border border-gray-200 text-gray-600 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-            >
+            <button onClick={() => setCurrentPage(p => Math.max(p - 1, 1))} disabled={currentPage === 1} className="p-2 rounded-lg border border-gray-200 text-gray-600 hover:bg-gray-50 disabled:opacity-50">
               <ChevronLeft className="h-4 w-4" />
             </button>
-            <span className="text-sm text-gray-600">
-              Página {currentPage} de {totalPages}
-            </span>
-            <button
-              onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
-              disabled={currentPage === totalPages}
-              className="p-2 rounded-lg border border-gray-200 text-gray-600 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-            >
+            <span className="text-sm text-gray-600">Página {currentPage} de {totalPages}</span>
+            <button onClick={() => setCurrentPage(p => Math.min(p + 1, totalPages))} disabled={currentPage === totalPages} className="p-2 rounded-lg border border-gray-200 text-gray-600 hover:bg-gray-50 disabled:opacity-50">
               <ChevronRight className="h-4 w-4" />
             </button>
           </div>
