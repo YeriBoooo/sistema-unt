@@ -5,7 +5,7 @@ import { apiFetch } from '@/lib/api/client';
 import { useParams } from 'next/navigation';
 import Link from 'next/link';
 import { motion, AnimatePresence } from 'framer-motion';
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { 
   FileText, 
   User, 
@@ -25,9 +25,15 @@ import {
   Award,
   GraduationCap,
   ChevronRight,
-  TrendingUp
+  TrendingUp,
+  BarChart3,
+  Edit,
+  Trash2,
+  MessageSquare,
+  FileCheck
 } from 'lucide-react';
 import { useAuth } from '@/lib/hooks/useAuth';
+import { toast } from 'sonner';
 
 interface Avance {
   id: number;
@@ -104,28 +110,28 @@ const staggerContainer = {
 const getEstadoConfig = (estado: string) => {
   switch (estado) {
     case 'propuesta':
-      return { label: 'Propuesta', color: 'bg-amber-50 text-amber-700 border-amber-100', icon: Clock };
+      return { label: 'Propuesta', color: 'bg-amber-50 text-amber-700 border-amber-100', icon: Clock, progress: 25 };
     case 'desarrollo':
-      return { label: 'En desarrollo', color: 'bg-blue-50 text-blue-700 border-blue-100', icon: TrendingUp };
+      return { label: 'En desarrollo', color: 'bg-blue-50 text-blue-700 border-blue-100', icon: TrendingUp, progress: 50 };
     case 'sustentacion':
-      return { label: 'Sustentación', color: 'bg-purple-50 text-purple-700 border-purple-100', icon: GraduationCap };
+      return { label: 'Sustentación', color: 'bg-purple-50 text-purple-700 border-purple-100', icon: GraduationCap, progress: 75 };
     case 'culminado':
-      return { label: 'Culminado', color: 'bg-emerald-50 text-emerald-700 border-emerald-100', icon: CheckCircle };
+      return { label: 'Culminado', color: 'bg-emerald-50 text-emerald-700 border-emerald-100', icon: CheckCircle, progress: 100 };
     default:
-      return { label: estado, color: 'bg-gray-50 text-gray-600 border-gray-100', icon: FileText };
+      return { label: estado, color: 'bg-gray-50 text-gray-600 border-gray-100', icon: FileText, progress: 0 };
   }
 };
 
 const getAvanceEstadoConfig = (estado: string) => {
   switch (estado) {
     case 'aprobado':
-      return { label: 'Aprobado', color: 'bg-emerald-50 text-emerald-700' };
+      return { label: 'Aprobado', color: 'bg-emerald-50 text-emerald-700', icon: CheckCircle };
     case 'revisado':
-      return { label: 'Revisado', color: 'bg-blue-50 text-blue-700' };
+      return { label: 'Revisado', color: 'bg-blue-50 text-blue-700', icon: Eye };
     case 'observado':
-      return { label: 'Observado', color: 'bg-amber-50 text-amber-700' };
+      return { label: 'Observado', color: 'bg-amber-50 text-amber-700', icon: AlertCircle };
     default:
-      return { label: 'Entregado', color: 'bg-gray-50 text-gray-600' };
+      return { label: 'Entregado', color: 'bg-gray-50 text-gray-600', icon: FileText };
   }
 };
 
@@ -159,8 +165,13 @@ export default function DetalleTesisPage() {
   });
 
   const tesis: TesisDetalle | undefined = response?.data?.data || response?.data || response;
-  const estadoConfig = tesis ? getEstadoConfig(tesis.estado) : { label: '', color: '', icon: FileText };
+  const estadoConfig = tesis ? getEstadoConfig(tesis.estado) : { label: '', color: '', icon: FileText, progress: 0 };
   const EstadoIcon = estadoConfig.icon;
+
+  // Calcular progreso basado en avances aprobados
+  const totalAvances = tesis?.avances?.length || 0;
+  const avancesAprobados = tesis?.avances?.filter(a => a.estado === 'aprobado').length || 0;
+  const progresoAvances = totalAvances > 0 ? (avancesAprobados / totalAvances) * 100 : 0;
 
   const revisarAvanceMutation = useMutation({
     mutationFn: async ({ avanceId, estado, observaciones }: { avanceId: number; estado: string; observaciones?: string }) => {
@@ -170,14 +181,14 @@ export default function DetalleTesisPage() {
       });
     },
     onSuccess: () => {
-      alert('✅ Avance revisado correctamente');
+      toast.success('✅ Avance revisado correctamente');
       setMostrarModal(false);
       setAvanceSeleccionado(null);
       setObservacion('');
       refetch();
     },
     onError: (error: any) => {
-      alert('❌ Error al revisar: ' + error.message);
+      toast.error('❌ Error al revisar: ' + error.message);
     },
   });
 
@@ -192,13 +203,13 @@ export default function DetalleTesisPage() {
       return res.json();
     },
     onSuccess: () => {
-      alert('✅ Acta registrada correctamente');
+      toast.success('✅ Acta registrada correctamente');
       setMostrarModalActa(false);
       setFormActa({ fecha: '', lugar: '', nota_final: '', archivo: null });
       refetch();
     },
     onError: (error: any) => {
-      alert('❌ Error al registrar acta: ' + error.message);
+      toast.error('❌ Error al registrar acta: ' + error.message);
     },
   });
 
@@ -227,7 +238,7 @@ export default function DetalleTesisPage() {
   const enviarAvance = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!nuevoAvance.descripcion) {
-      alert('Por favor ingresa una descripción');
+      toast.error('Por favor ingresa una descripción');
       return;
     }
     
@@ -245,16 +256,16 @@ export default function DetalleTesisPage() {
       });
       
       if (res.ok) {
-        alert('✅ Avance subido exitosamente');
+        toast.success('✅ Avance subido exitosamente');
         setMostrarFormularioAvance(false);
         setNuevoAvance({ tipo: 'capitulo', descripcion: '', archivo: null });
         refetch();
       } else {
         const error = await res.json();
-        alert('❌ Error: ' + error.message);
+        toast.error('❌ Error: ' + error.message);
       }
     } catch (error) {
-      alert('❌ Error al subir el avance');
+      toast.error('❌ Error al subir el avance');
     } finally {
       setSubiendo(false);
     }
@@ -267,7 +278,7 @@ export default function DetalleTesisPage() {
   const handleRegistrarActa = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!formActa.fecha) {
-      alert('La fecha es obligatoria');
+      toast.error('La fecha es obligatoria');
       return;
     }
     
@@ -312,7 +323,6 @@ export default function DetalleTesisPage() {
 
   return (
     <div className="min-h-screen bg-white">
-      {/* MISMO ESTILO QUE PRÁCTICAS: max-w-7xl mx-auto px-4 py-8 sm:px-6 lg:px-8 */}
       <div className="max-w-7xl mx-auto px-4 py-8 sm:px-6 lg:px-8">
         
         {/* Navigation */}
@@ -466,6 +476,29 @@ export default function DetalleTesisPage() {
               </div>
             </div>
 
+            {/* Barra de progreso general */}
+            <div className="px-6 py-4 border-b border-gray-100 bg-gradient-to-r from-blue-50/30 to-indigo-50/30">
+              <div className="flex justify-between items-center mb-2">
+                <div className="flex items-center gap-2">
+                  <BarChart3 className="h-4 w-4 text-blue-600" />
+                  <span className="text-xs font-semibold text-gray-700 uppercase">Progreso general</span>
+                </div>
+                <span className="text-sm font-bold text-blue-600">{Math.round(progresoAvances)}%</span>
+              </div>
+              <div className="w-full bg-gray-200 rounded-full h-2">
+                <div 
+                  className="bg-gradient-to-r from-blue-500 to-emerald-500 h-2 rounded-full transition-all duration-700"
+                  style={{ width: `${progresoAvances}%` }}
+                />
+              </div>
+              <div className="flex justify-between text-[10px] text-gray-400 mt-2">
+                <span>Propuesta</span>
+                <span>Desarrollo</span>
+                <span>Sustentación</span>
+                <span>Culminado</span>
+              </div>
+            </div>
+
             {/* Info General */}
             <div className="p-6 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 border-b border-gray-100">
               <div className="flex items-center gap-3">
@@ -473,6 +506,13 @@ export default function DetalleTesisPage() {
                 <div>
                   <p className="text-[10px] text-gray-400">Fecha de inicio</p>
                   <p className="text-sm text-gray-700">{tesis.fecha_inicio ? new Date(tesis.fecha_inicio).toLocaleDateString() : 'No registrada'}</p>
+                </div>
+              </div>
+              <div className="flex items-center gap-3">
+                <FileCheck className="h-4 w-4 text-gray-400" />
+                <div>
+                  <p className="text-[10px] text-gray-400">Avances</p>
+                  <p className="text-sm text-gray-700">{avancesAprobados}/{totalAvances} aprobados</p>
                 </div>
               </div>
             </div>
@@ -526,15 +566,15 @@ export default function DetalleTesisPage() {
               </div>
             )}
 
-            {/* Acta */}
-            {esAdmin && (
+            {/* Acta - visible para admin y asesor */}
+            {(esAdmin || esAsesor) && (
               <div className="p-6 border-b border-gray-100 bg-purple-50/30">
                 <div className="flex items-center justify-between flex-wrap gap-3">
                   <div className="flex items-center gap-2">
                     <FileText className="h-4 w-4 text-purple-600" />
                     <h2 className="text-xs font-semibold text-gray-600 uppercase">Acta de sustentación</h2>
                   </div>
-                  {!tesis.acta && (
+                  {esAdmin && !tesis.acta && (
                     <button onClick={() => setMostrarModalActa(true)} className="inline-flex items-center gap-1 px-3 py-1.5 bg-purple-600 text-white text-xs rounded-lg hover:bg-purple-700">
                       <Upload className="h-3 w-3" /> Registrar acta
                     </button>
@@ -548,7 +588,7 @@ export default function DetalleTesisPage() {
                     {tesis.acta.archivo_acta_pdf && (
                       <div><p className="text-xs text-gray-400">Acta</p><a href={`${API_URL}${tesis.acta.archivo_acta_pdf}`} target="_blank" className="text-sm text-blue-600 hover:text-blue-700 inline-flex items-center gap-1"><Download className="h-3 w-3" /> Descargar</a></div>
                     )}
-                    <button onClick={() => setMostrarModalActa(true)} className="text-xs text-purple-600 hover:text-purple-700">Editar</button>
+                    {esAdmin && <button onClick={() => setMostrarModalActa(true)} className="text-xs text-purple-600 hover:text-purple-700">Editar</button>}
                   </div>
                 ) : (
                   <div className="mt-4 text-center py-6"><FileText className="h-8 w-8 text-gray-300 mx-auto mb-2" /><p className="text-sm text-gray-400">No hay acta registrada</p></div>
@@ -589,10 +629,12 @@ export default function DetalleTesisPage() {
                 <div className="space-y-3">
                   {tesis.avances.map((avance) => {
                     const avanceConfig = getAvanceEstadoConfig(avance.estado);
+                    const AvanceIcon = avanceConfig.icon;
                     return (
-                      <div key={avance.id} className="bg-gray-50 rounded-xl p-4">
+                      <div key={avance.id} className="bg-gray-50 rounded-xl p-4 transition-all hover:shadow-md">
                         <div className="flex flex-wrap items-center justify-between gap-2 mb-2">
                           <div className="flex items-center gap-2">
+                            <AvanceIcon className={`h-4 w-4 ${avance.estado === 'aprobado' ? 'text-emerald-500' : avance.estado === 'observado' ? 'text-amber-500' : 'text-gray-400'}`} />
                             <span className="text-sm font-medium text-gray-800 capitalize">{avance.tipo}</span>
                             <span className={`text-[10px] font-medium px-2 py-0.5 rounded-full ${avanceConfig.color}`}>{avanceConfig.label}</span>
                           </div>
@@ -610,7 +652,10 @@ export default function DetalleTesisPage() {
                           </button>
                         )}
                         {avance.observaciones && (
-                          <div className="mt-2 p-2 bg-amber-50 rounded-lg text-xs text-amber-700">{avance.observaciones}</div>
+                          <div className="mt-2 p-2 bg-amber-50 rounded-lg text-xs text-amber-700 flex items-start gap-1">
+                            <MessageSquare className="h-3 w-3 mt-0.5 flex-shrink-0" />
+                            <span>{avance.observaciones}</span>
+                          </div>
                         )}
                       </div>
                     );
