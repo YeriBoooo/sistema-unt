@@ -14,8 +14,10 @@ import {
   GraduationCap,
   Mail,
   Phone,
-  Calendar
+  ChevronLeft,
+  ChevronRight
 } from 'lucide-react';
+import { toast } from 'sonner';
 
 interface Estudiante {
   id: number;
@@ -36,13 +38,15 @@ interface Estudiante {
 
 export default function EstudiantesPage() {
   const [searchTerm, setSearchTerm] = useState('');
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 10;
 
   const { data: response, isLoading, refetch } = useQuery({
     queryKey: ['estudiantes'],
     queryFn: () => apiFetch<any>('/estudiantes'),
   });
 
-  // ✅ CORREGIDO: Extraer el array correctamente
+  // ✅ Extraer el array correctamente
   let estudiantes: Estudiante[] = [];
   
   if (Array.isArray(response)) {
@@ -53,11 +57,32 @@ export default function EstudiantesPage() {
     estudiantes = response.data.data;
   }
 
+  // ✅ Filtrar por búsqueda
   const filteredEstudiantes = estudiantes.filter(estudiante =>
     estudiante.usuario?.nombres?.toLowerCase().includes(searchTerm.toLowerCase()) ||
     estudiante.usuario?.apellidos?.toLowerCase().includes(searchTerm.toLowerCase()) ||
     estudiante.codigo_universitario?.toLowerCase().includes(searchTerm.toLowerCase())
   );
+
+  // ✅ Paginación
+  const totalPages = Math.ceil(filteredEstudiantes.length / itemsPerPage);
+  const paginatedEstudiantes = filteredEstudiantes.slice(
+    (currentPage - 1) * itemsPerPage,
+    currentPage * itemsPerPage
+  );
+
+  // ✅ Eliminar estudiante
+  const handleDelete = async (id: number, nombre: string) => {
+    if (!confirm(`¿Estás seguro de eliminar a ${nombre}?`)) return;
+    
+    try {
+      await apiFetch(`/estudiantes/${id}`, { method: 'DELETE' });
+      toast.success('✅ Estudiante eliminado correctamente');
+      refetch();
+    } catch (error: any) {
+      toast.error('❌ Error al eliminar: ' + error.message);
+    }
+  };
 
   if (isLoading) {
     return (
@@ -79,7 +104,7 @@ export default function EstudiantesPage() {
             </div>
             <Link
               href="/estudiantes/nuevo"
-              className="px-4 py-2 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700 flex items-center gap-2"
+              className="px-4 py-2 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700 flex items-center gap-2 transition-colors"
             >
               <Plus className="h-4 w-4" />
               Nuevo estudiante
@@ -95,7 +120,10 @@ export default function EstudiantesPage() {
               type="text"
               placeholder="Buscar por nombre, apellido o código..."
               value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
+              onChange={(e) => {
+                setSearchTerm(e.target.value);
+                setCurrentPage(1);
+              }}
               className="w-full pl-9 pr-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
           </div>
@@ -116,14 +144,14 @@ export default function EstudiantesPage() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100">
-                {filteredEstudiantes.length === 0 ? (
+                {paginatedEstudiantes.length === 0 ? (
                   <tr>
                     <td colSpan={6} className="text-center py-8 text-gray-500">
                       No hay estudiantes registrados
                     </td>
                   </tr>
                 ) : (
-                  filteredEstudiantes.map((estudiante) => (
+                  paginatedEstudiantes.map((estudiante) => (
                     <tr key={estudiante.id} className="hover:bg-gray-50 transition-colors">
                       <td className="px-4 py-3 text-sm font-medium text-gray-800">
                         {estudiante.codigo_universitario}
@@ -166,26 +194,22 @@ export default function EstudiantesPage() {
                       </td>
                       <td className="px-4 py-3">
                         <div className="flex items-center gap-2">
-                          <button
-                            onClick={() => window.location.href = `/estudiantes/${estudiante.id}`}
+                          <Link
+                            href={`/estudiantes/${estudiante.id}`}
                             className="p-1 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
                             title="Ver detalles"
                           >
                             <Eye className="h-4 w-4" />
-                          </button>
-                          <button
-                            onClick={() => window.location.href = `/estudiantes/${estudiante.id}/editar`}
+                          </Link>
+                          <Link
+                            href={`/estudiantes/${estudiante.id}/editar`}
                             className="p-1 text-green-600 hover:bg-green-50 rounded-lg transition-colors"
                             title="Editar"
                           >
                             <Edit className="h-4 w-4" />
-                          </button>
+                          </Link>
                           <button
-                            onClick={() => {
-                              if (confirm('¿Estás seguro de eliminar este estudiante?')) {
-                                // Lógica de eliminación
-                              }
-                            }}
+                            onClick={() => handleDelete(estudiante.id, `${estudiante.usuario?.nombres} ${estudiante.usuario?.apellidos}`)}
                             className="p-1 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
                             title="Eliminar"
                           >
@@ -200,6 +224,29 @@ export default function EstudiantesPage() {
             </table>
           </div>
         </div>
+
+        {/* Paginación */}
+        {totalPages > 1 && (
+          <div className="flex justify-center items-center gap-2 mt-6">
+            <button
+              onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+              disabled={currentPage === 1}
+              className="p-2 rounded-lg border border-gray-200 text-gray-600 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            >
+              <ChevronLeft className="h-4 w-4" />
+            </button>
+            <span className="text-sm text-gray-600">
+              Página {currentPage} de {totalPages}
+            </span>
+            <button
+              onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+              disabled={currentPage === totalPages}
+              className="p-2 rounded-lg border border-gray-200 text-gray-600 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            >
+              <ChevronRight className="h-4 w-4" />
+            </button>
+          </div>
+        )}
       </div>
     </div>
   );
