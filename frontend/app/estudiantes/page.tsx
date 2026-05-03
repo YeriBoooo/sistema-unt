@@ -46,15 +46,16 @@ export default function EstudiantesPage() {
     queryFn: () => apiFetch<any>('/estudiantes'),
   });
 
-  // ✅ Extraer el array correctamente
+  // ✅ Extraer el array correctamente (la estructura es data.data)
   let estudiantes: Estudiante[] = [];
-  
-  if (Array.isArray(response)) {
-    estudiantes = response;
-  } else if (response?.data && Array.isArray(response.data)) {
-    estudiantes = response.data;
-  } else if (response?.data?.data && Array.isArray(response.data.data)) {
-    estudiantes = response.data.data;
+  const responseData = response as any;
+
+  if (responseData?.data?.data && Array.isArray(responseData.data.data)) {
+    estudiantes = responseData.data.data;
+  } else if (responseData?.data && Array.isArray(responseData.data)) {
+    estudiantes = responseData.data;
+  } else if (Array.isArray(responseData)) {
+    estudiantes = responseData;
   }
 
   // ✅ Filtrar por búsqueda
