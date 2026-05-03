@@ -5,7 +5,7 @@ import { apiFetch } from '@/lib/api/client';
 import { useParams, useRouter } from 'next/navigation';
 import { useAuth } from '@/lib/hooks/useAuth';
 import { motion } from 'framer-motion';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { toast } from 'sonner';
 import { 
@@ -26,7 +26,8 @@ import {
   Users,
   CheckCircle,
   Loader2,
-  Pencil
+  Pencil,
+  UserCheck
 } from 'lucide-react';
 
 interface OfertaDetalle {
@@ -61,6 +62,32 @@ interface PostulacionInfo {
     informe_estudiante?: string;
     informe_asesor?: string;
   };
+}
+
+interface Postulacion {
+  id: number;
+  estado: string;
+  fecha_postulacion: string;
+  estudiante: {
+    id: number;
+    usuario: {
+      nombres: string;
+      apellidos: string;
+      email: string;
+    };
+    codigo_universitario: string;
+  };
+  asesor_academico_id?: number;
+}
+
+interface Asesor {
+  id: number;
+  usuario: {
+    nombres: string;
+    apellidos: string;
+    email: string;
+  };
+  especialidad: string;
 }
 
 const fadeInUp = {
@@ -103,11 +130,31 @@ export default function DetalleOfertaPage() {
   const [horas, setHoras] = useState('');
   const [informe, setInforme] = useState('');
   const [mostrarFormulario, setMostrarFormulario] = useState(false);
+  const [asesorSeleccionado, setAsesorSeleccionado] = useState<number | null>(null);
+  const [postulacionesData, setPostulacionesData] = useState<Postulacion[]>([]);
 
-  // ✅ Verificar si puede editar
   const canEdit = user?.roles?.includes('admin') || 
                   user?.roles?.includes('coordinador') || 
                   user?.roles?.includes('empresa');
+
+  const canAssignAsesor = user?.roles?.includes('admin') || user?.roles?.includes('coordinador');
+
+  // ✅ Cargar lista de asesores - SIN ERROR DE TYPESCRIPT
+  const { data: asesoresData } = useQuery({
+    queryKey: ['asesores'],
+    queryFn: () => apiFetch<any>('/asesores'),
+    enabled: canAssignAsesor,
+  });
+
+  // ✅ Normalización segura de asesores (sin subrayado)
+  const asesores: Asesor[] = (() => {
+    const raw = asesoresData as any;
+    if (!raw) return [];
+    if (Array.isArray(raw)) return raw;
+    if (raw?.data && Array.isArray(raw.data)) return raw.data;
+    if (raw?.data?.data && Array.isArray(raw.data.data)) return raw.data.data;
+    return [];
+  })();
 
   // ✅ 1. Obtener detalles de la oferta
   const { data: response, isLoading, refetch } = useQuery({
@@ -118,7 +165,22 @@ export default function DetalleOfertaPage() {
 
   const oferta: OfertaDetalle | undefined = (response as any)?.data?.data || (response as any)?.data || response;
 
-  // ✅ 2. Obtener postulación específica de esta oferta
+  // ✅ Obtener postulaciones de esta oferta
+  const { data: postulacionesResponse, refetch: refetchPostulaciones } = useQuery({
+    queryKey: ['postulaciones-oferta', id],
+    queryFn: () => apiFetch<any>(`/ofertas/${id}/postulaciones`) as Promise<any>,
+    enabled: canAssignAsesor && !!id,
+  });
+
+  useEffect(() => {
+    if (postulacionesResponse) {
+      const raw = postulacionesResponse as any;
+      const data = raw?.data?.data || raw?.data || raw;
+      setPostulacionesData(Array.isArray(data) ? data : []);
+    }
+  }, [postulacionesResponse]);
+
+  // ✅ 2. Obtener postulación específica de esta oferta (para estudiantes)
   const { data: postulacionResponse, refetch: refetchPostulacion } = useQuery({
     queryKey: ['mi-postulacion', id],
     queryFn: () => apiFetch(`/ofertas/${id}/mi-postulacion`) as Promise<any>,
@@ -128,7 +190,7 @@ export default function DetalleOfertaPage() {
   const postulacionData = (postulacionResponse as any)?.data?.data || (postulacionResponse as any)?.data;
   const postulacion: PostulacionInfo | undefined = postulacionData?.id ? postulacionData : undefined;
 
-  // ✅ 3. Obtener todas las postulaciones del estudiante (normalizado a array siempre)
+  // ✅ 3. Obtener todas las postulaciones del estudiante
   const { data: todasPostulaciones, isLoading: loadingPostulaciones } = useQuery({
     queryKey: ['mis-postulaciones-todas'],
     queryFn: async () => {
@@ -140,12 +202,10 @@ export default function DetalleOfertaPage() {
     enabled: !!user?.roles?.includes('estudiante'),
   });
 
-  // ✅ 4. todasPostulaciones SIEMPRE es un array gracias a la normalización
   const tienePostulacionActiva = (todasPostulaciones || []).some(
     (p: any) => (p.estado === 'postulado' || p.estado === 'aceptado' || p.estado === 'en_curso') && p.id !== postulacion?.id
   );
 
-  // ✅ 5. Estados de postulación
   const puedePostular = user?.roles?.includes('estudiante') 
     && oferta?.estado === 'abierta' 
     && !postulacion 
@@ -163,7 +223,24 @@ export default function DetalleOfertaPage() {
     ? postulacion.seguimiento.horas_totales - postulacion.seguimiento.horas_cumplidas 
     : 0;
 
-  // ✅ 6. Mutación para postular
+  // ✅ Mutación para asignar asesor
+  const asignarAsesorMutation = useMutation({
+    mutationFn: async ({ postulacionId, asesorId }: { postulacionId: number; asesorId: number }) => {
+      return apiFetch(`/ofertas/postulaciones/${postulacionId}/asesor`, {
+        method: 'PATCH',
+        body: JSON.stringify({ asesorId }),
+      });
+    },
+    onSuccess: () => {
+      toast.success('✅ Asesor asignado correctamente');
+      refetchPostulaciones();
+      setAsesorSeleccionado(null);
+    },
+    onError: (error: any) => {
+      toast.error('❌ Error al asignar asesor: ' + error.message);
+    },
+  });
+
   const postularMutation = useMutation({
     mutationFn: async () => {
       return apiFetch(`/ofertas/${id}/postular`, { method: 'POST' });
@@ -182,7 +259,6 @@ export default function DetalleOfertaPage() {
     },
   });
 
-  // ✅ 7. Mutación para registrar horas
   const registrarHorasMutation = useMutation({
     mutationFn: async (data: { horas_cumplidas: number; informe: string }) => {
       return apiFetch(`/seguimiento/postulacion/${postulacion?.id}/horas`, {
@@ -207,6 +283,14 @@ export default function DetalleOfertaPage() {
     if (confirm('¿Estás seguro de que quieres postular a esta práctica?')) {
       postularMutation.mutate();
     }
+  };
+
+  const handleAsignarAsesor = (postulacionId: number) => {
+    if (!asesorSeleccionado) {
+      toast.error('Selecciona un asesor primero');
+      return;
+    }
+    asignarAsesorMutation.mutate({ postulacionId, asesorId: asesorSeleccionado });
   };
 
   const handleRegistrarHoras = (e: React.FormEvent) => {
@@ -258,7 +342,6 @@ export default function DetalleOfertaPage() {
     <div className="min-h-screen bg-white">
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12">
         
-        {/* Navigation con botón de edición */}
         <div className="flex justify-between items-center mb-8">
           <Link 
             href="/practicas" 
@@ -268,7 +351,6 @@ export default function DetalleOfertaPage() {
             <span>Volver a prácticas</span>
           </Link>
           
-          {/* ✅ Botón Editar - solo para admin/coordinador/empresa */}
           {canEdit && (
             <Link href={`/practicas/${oferta.id}/editar`}>
               <button className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-colors shadow-sm">
@@ -302,7 +384,6 @@ export default function DetalleOfertaPage() {
                 <h1 className="text-2xl sm:text-3xl font-semibold text-gray-800 tracking-tight">{oferta.titulo}</h1>
               </div>
 
-              {/* Badge de estado de postulación */}
               {estadoPostulacion && (
                 <span className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium ${getEstadoColor(estadoPostulacion)}`}>
                   <EstadoIcon className="h-3.5 w-3.5" />
@@ -366,6 +447,70 @@ export default function DetalleOfertaPage() {
                 <h2 className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Requisitos</h2>
               </div>
               <p className="text-gray-600 leading-relaxed">{oferta.requisitos}</p>
+            </motion.div>
+          )}
+
+          {/* Postulaciones (solo para admin/coordinador) */}
+          {canAssignAsesor && postulacionesData.length > 0 && (
+            <motion.div variants={fadeInUp} className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+              <div className="px-6 py-4 border-b border-gray-100 bg-gradient-to-r from-blue-50/50 to-indigo-50/50">
+                <div className="flex items-center gap-2">
+                  <Users className="h-4 w-4 text-blue-600" />
+                  <h2 className="text-xs font-semibold text-gray-600 uppercase">Postulaciones recibidas</h2>
+                </div>
+              </div>
+              <div className="divide-y divide-gray-100">
+                {postulacionesData.map((post: Postulacion) => (
+                  <div key={post.id} className="p-4">
+                    <div className="flex justify-between items-start mb-2">
+                      <div>
+                        <p className="font-medium text-gray-800">
+                          {post.estudiante?.usuario?.nombres} {post.estudiante?.usuario?.apellidos}
+                        </p>
+                        <p className="text-xs text-gray-500">
+                          {post.estudiante?.codigo_universitario} · {post.estudiante?.usuario?.email}
+                        </p>
+                      </div>
+                      <span className={`text-xs px-2 py-1 rounded-full font-medium ${
+                        post.estado === 'aceptado' ? 'bg-green-100 text-green-700' :
+                        post.estado === 'en_curso' ? 'bg-blue-100 text-blue-700' :
+                        post.estado === 'finalizado' ? 'bg-gray-100 text-gray-700' :
+                        'bg-yellow-100 text-yellow-700'
+                      }`}>
+                        {post.estado === 'aceptado' ? 'Aceptado' :
+                         post.estado === 'en_curso' ? 'En curso' :
+                         post.estado === 'finalizado' ? 'Finalizado' : 'Postulado'}
+                      </span>
+                    </div>
+                    <p className="text-xs text-gray-400">Postulado: {new Date(post.fecha_postulacion).toLocaleDateString()}</p>
+                    
+                    {post.estado === 'aceptado' && !post.asesor_academico_id && (
+                      <div className="mt-3 flex items-center gap-3">
+                        <select
+                          value={asesorSeleccionado || ''}
+                          onChange={(e) => setAsesorSeleccionado(Number(e.target.value))}
+                          className="text-sm border border-gray-200 rounded-lg px-3 py-1.5 focus:ring-2 focus:ring-blue-500"
+                        >
+                          <option value="">Seleccionar asesor</option>
+                          {asesores.map((asesor) => (
+                            <option key={asesor.id} value={asesor.id}>
+                              {asesor.usuario?.nombres} {asesor.usuario?.apellidos}
+                            </option>
+                          ))}
+                        </select>
+                        <button
+                          onClick={() => handleAsignarAsesor(post.id)}
+                          disabled={asignarAsesorMutation.isPending}
+                          className="inline-flex items-center gap-1 px-3 py-1.5 bg-blue-600 text-white text-xs rounded-lg hover:bg-blue-700"
+                        >
+                          <UserCheck className="h-3 w-3" />
+                          Asignar asesor
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
             </motion.div>
           )}
 
@@ -460,7 +605,6 @@ export default function DetalleOfertaPage() {
             </motion.div>
           )}
 
-          {/* Estados de postulación */}
           {estaPostulado && (
             <motion.div variants={fadeInUp} className="bg-amber-50 rounded-xl p-5 text-center">
               <Clock className="h-6 w-6 text-amber-600 mx-auto mb-2" />
@@ -483,7 +627,6 @@ export default function DetalleOfertaPage() {
             </motion.div>
           )}
 
-          {/* Mensaje cuando tiene postulación activa en otra oferta */}
           {tienePostulacionActiva && !postulacion && (
             <motion.div variants={fadeInUp} className="bg-amber-50 rounded-xl p-5 text-center border border-amber-200">
               <AlertCircle className="h-6 w-6 text-amber-600 mx-auto mb-2" />
@@ -497,7 +640,6 @@ export default function DetalleOfertaPage() {
             </motion.div>
           )}
 
-          {/* Botón postular */}
           {puedePostular && (
             <motion.div variants={fadeInUp}>
               <button
@@ -515,7 +657,6 @@ export default function DetalleOfertaPage() {
             </motion.div>
           )}
 
-          {/* Usuario no estudiante */}
           {!user?.roles?.includes('estudiante') && user && (
             <motion.div variants={fadeInUp} className="bg-gray-50 rounded-xl p-5 text-center">
               <AlertCircle className="h-6 w-6 text-gray-500 mx-auto mb-2" />
