@@ -15,8 +15,7 @@ import {
   Users, 
   MapPin, 
   FileText,
-  CheckCircle,
-  AlertCircle
+  CheckCircle
 } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -33,9 +32,9 @@ export default function NuevaOfertaPage() {
     vacantes: 1,
     fecha_inicio: '',
     fecha_fin: '',
+    empresa_id: 1,
   });
 
-  // Verificar permisos
   const canCreate = user?.roles?.includes('admin') || 
                     user?.roles?.includes('coordinador') || 
                     user?.roles?.includes('empresa');
@@ -71,13 +70,9 @@ export default function NuevaOfertaPage() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-50">
       <div className="max-w-3xl mx-auto px-4 py-8 sm:px-6 lg:px-8">
-        
         {/* Header */}
         <div className="mb-6">
-          <Link 
-            href="/practicas" 
-            className="inline-flex items-center gap-1 text-sm text-gray-500 hover:text-gray-700 transition-colors mb-4 group"
-          >
+          <Link href="/practicas" className="inline-flex items-center gap-1 text-sm text-gray-500 hover:text-gray-700 transition-colors mb-4 group">
             <ArrowLeft className="h-4 w-4 transition-transform group-hover:-translate-x-1" />
             Volver a prácticas
           </Link>
@@ -103,6 +98,31 @@ export default function NuevaOfertaPage() {
           onSubmit={handleSubmit}
           className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 space-y-5"
         >
+          {/* Empresa (solo admin/coordinador) */}
+          {(user?.roles?.includes('admin') || user?.roles?.includes('coordinador')) && (
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Empresa *
+              </label>
+              <div className="relative">
+                <Building2 className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+                <select
+                  name="empresa_id"
+                  value={formData.empresa_id}
+                  onChange={handleChange}
+                  required
+                  className="w-full pl-10 pr-4 py-2.5 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#E8A735] appearance-none cursor-pointer bg-white"
+                >
+                  <option value="1">Grupo Ferreyros S.A.</option>
+                  <option value="2">Backus S.A.A.</option>
+                  <option value="3">Intercorp Peru</option>
+                  <option value="4">Alicorp S.A.A.</option>
+                  <option value="5">BBVA Peru</option>
+                </select>
+              </div>
+            </div>
+          )}
+
           {/* Título */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -155,7 +175,6 @@ export default function NuevaOfertaPage() {
 
           {/* Grid 2 columnas */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            {/* Modalidad */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
                 Modalidad *
@@ -176,7 +195,6 @@ export default function NuevaOfertaPage() {
               </div>
             </div>
 
-            {/* Vacantes */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
                 Vacantes *
