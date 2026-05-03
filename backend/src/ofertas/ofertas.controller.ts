@@ -32,12 +32,17 @@ export class OfertasController {
     return this.postulacionesService.findAllByEstudiante(estudiante.id);
   }
 
-  // ✅ ENDPOINT PARA ASESOR - VER SUS POSTULACIONES ASIGNADAS
   @Get('postulaciones/asesor')
   @Roles('asesor')
   async postulacionesAsesor(@CurrentUser() user: any) {
     const asesor = await this.ofertasService.getAsesorByUsuarioId(user.id);
     return this.postulacionesService.findAllByAsesor(asesor.id);
+  }
+
+  @Get(':id/postulaciones')
+  @Roles('admin', 'coordinador')
+  async getPostulacionesByOferta(@Param('id') id: string) {
+    return this.ofertasService.getPostulacionesByOferta(parseInt(id));
   }
 
   @Get(':id/mi-postulacion')

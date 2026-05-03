@@ -67,7 +67,6 @@ export class OfertasService {
     const oferta = await this.prisma.ofertaPractica.findUnique({ where: { id: ofertaId } });
     if (!oferta || oferta.estado !== 'abierta') throw new BadRequestException('Oferta no disponible');
     
-    // Verificar que el estudiante no tenga otra postulación activa
     const existing = await this.prisma.postulacion.findFirst({
       where: { 
         estudiante_id: estudianteId, 
@@ -95,7 +94,6 @@ export class OfertasService {
     });
   }
 
-  // ✅ NUEVO MÉTODO: Obtener postulación por oferta y estudiante
   async findPostulacionByOfertaAndEstudiante(ofertaId: number, estudianteId: number) {
     const postulacion = await this.prisma.postulacion.findFirst({
       where: { 
@@ -107,7 +105,6 @@ export class OfertasService {
     return postulacion;
   }
 
-  // ✅ NUEVOS MÉTODOS (necesarios para el controller)
   async getEstudianteByUsuarioId(usuarioId: number) {
     const estudiante = await this.prisma.estudiante.findUnique({
       where: { usuario_id: usuarioId },
@@ -122,5 +119,21 @@ export class OfertasService {
     });
     if (!asesor) throw new NotFoundException('Asesor no encontrado');
     return asesor;
+  }
+
+  // ✅ NUEVO MÉTODO: Obtener postulaciones por oferta
+  async getPostulacionesByOferta(ofertaId: number) {
+    const postulaciones = await this.prisma.postulacion.findMany({
+      where: { oferta_id: ofertaId },
+      include: {
+        estudiante: {
+          include: {
+            usuario: true
+          }
+        }
+      },
+      orderBy: { created_at: 'desc' }
+    });
+    return postulaciones;
   }
 }
