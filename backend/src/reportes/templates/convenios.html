@@ -1,0 +1,165 @@
+import { Injectable } from '@nestjs/common';
+import { PrismaService } from '../prisma/prisma.service';
+import * as puppeteer from 'puppeteer';
+import { join } from 'path';
+import { readFileSync } from 'fs';
+
+@Injectable()
+export class ReportesService {
+  constructor(private prisma: PrismaService) {}
+
+  private async generarPdf(html: string): Promise<Buffer> {
+    const browser = await puppeteer.launch({ 
+      args: ['--no-sandbox', '--disable-setuid-sandbox'],
+      headless: true 
+    });
+    const page = await browser.newPage();
+    await page.setContent(html, { waitUntil: 'networkidle0' });
+    const pdf = await page.pdf({ format: 'A4', printBackground: true });
+    await browser.close();
+    return Buffer.from(pdf);
+  }
+
+  private getFechaGeneracion(): string {
+    return new Date().toLocaleString('es-ES', {
+      day: '2-digit', month: '2-digit', year: 'numeric',
+      hour: '2-digit', minute: '2-digit'
+    });
+  }
+
+  async generarReportePracticas(filtros: any): Promise<Buffer> {
+    const whereClause: any = {};
+    if (filtros?.fecha_inicio?.gte) whereClause.created_at = { gte: filtros.fecha_inicio.gte };
+    if (filtros?.fecha_fin?.lte) whereClause.created_at = { ...whereClause.created_at, lte: filtros.fecha_fin.lte };
+
+    const data = await this.prisma.postulacion.findMany({
+      where: whereClause,
+      include: {
+        estudiante: { include: { usuario: true } },
+        oferta: { include: { empresa: true } },
+        seguimiento: true,
+      },
+      orderBy: { created_at: 'desc' },
+    });
+
+    let template = readFileSync(join(__dirname, 'templates', 'practicas.html'), 'utf-8');
+    
+    const totalHoras = data.reduce((s, p) => s + (p.seguimiento?.horas_cumplidas || 0), 0);
+    const aprobadas = data.filter(p => p.seguimiento?.evaluacion === 'aprobado').length;
+    const enCurso = data.filter(p => p.estado === 'en_curso' || p.estado === 'aceptado').length;
+
+    let tablaRows = '';
+    for (const p of data) {
+      tablaRows += `
+        <tr>
+          <td>${p.estudiante?.usuario?.nombres || '-'} ${p.estudiante?.usuario?.apellidos || '-'}</td>
+          <td>${p.estudiante?.codigo_universitario || '-'}</td>
+          <td>${p.oferta?.empresa?.razon_social || '-'}</td>
+          <td>${p.oferta?.titulo || '-'}</td>
+          <td>${p.oferta?.modalidad || '-'}</td>
+          <td class="${p.seguimiento?.evaluacion === 'aprobado' ? 'text-green' : ''}">${p.seguimiento?.horas_cumplidas || 0}/${p.seguimiento?.horas_totales || 300}</td>
+          <td>${p.seguimiento?.evaluacion === 'aprobado' ? '✅ Aprobado' : p.seguimiento?.evaluacion === 'desaprobado' ? '❌ Desaprobado' : '⏳ Pendiente'}</td>
+          <td class="estado-${p.estado}">${p.estado}</td>
+        </tr>
+      `;
+    }
+
+    template = template.replace('{{fechaGeneracion}}', this.getFechaGeneracion());
+    template = template.replace('{{totalPostulaciones}}', data.length.toString());
+    template = template.replace('{{totalHoras}}', totalHoras.toString());
+    template = template.replace('{{practicasAprobadas}}', aprobadas.toString());
+    template = template.replace('{{practicasEnCurso}}', enCurso.toString());
+    template = template.replace('{{contenidoTabla}}', tablaRows);
+    template = template.replace('{{anio}}', new Date().getFullYear().toString());
+
+    return this.generarPdf(template);
+  }
+
+  async generarReporteTesis(filtros: any): Promise<Buffer> {
+    const whereClause: any = {};
+    if (filtros?.fecha_inicio?.gte) whereClause.created_at = { gte: filtros.fecha_inicio.gte };
+    if (filtros?.fecha_fin?.lte) whereClause.created_at = { ...whereClause.created_at, lte: filtros.fecha_fin.lte };
+
+    const data = await this.prisma.tesis.findMany({
+      where: whereClause,
+      include: {
+        estudiante: { include: { usuario: true } },
+        asesor_principal: { include: { usuario: true } },
+        avances: true,
+      },
+      orderBy: { created_at: 'desc' },
+    });
+
+    let template = readFileSync(join(__dirname, 'templates', 'tesis.html'), 'utf-8');
+
+    const desarrollo = data.filter(t => t.estado === 'desarrollo').length;
+    const sustentacion = data.filter(t => t.estado === 'sustentacion').length;
+    const culminado = data.filter(t => t.estado === 'culminado').length;
+
+    let tablaRows = '';
+    for (const t of data) {
+      tablaRows += `
+        <tr>
+          <td>${t.estudiante?.usuario?.nombres || '-'} ${t.estudiante?.usuario?.apellidos || '-'}</td>
+          <td>${t.estudiante?.codigo_universitario || '-'}</td>
+          <td>${t.titulo || '-'}</td>
+          <td>${t.asesor_principal?.usuario?.nombres || '-'} ${t.asesor_principal?.usuario?.apellidos || '-'}</td>
+          <td class="estado-${t.estado}">${t.estado}</td>
+          <td>${t.avances?.length || 0} avances</td>
+        </tr>
+      `;
+    }
+
+    template = template.replace('{{fechaGeneracion}}', this.getFechaGeneracion());
+    template = template.replace('{{totalTesis}}', data.length.toString());
+    template = template.replace('{{tesisDesarrollo}}', desarrollo.toString());
+    template = template.replace('{{tesisSustentacion}}', sustentacion.toString());
+    template = template.replace('{{tesisCulminado}}', culminado.toString());
+    template = template.replace('{{contenidoTabla}}', tablaRows);
+    template = template.replace('{{anio}}', new Date().getFullYear().toString());
+
+    return this.generarPdf(template);
+  }
+
+  async generarReporteConvenios(filtros: any): Promise<Buffer> {
+    const whereClause: any = {};
+    if (filtros?.fecha_inicio?.gte) whereClause.created_at = { gte: filtros.fecha_inicio.gte };
+    if (filtros?.fecha_fin?.lte) whereClause.created_at = { ...whereClause.created_at, lte: filtros.fecha_fin.lte };
+
+    const data = await this.prisma.convenio.findMany({
+      where: whereClause,
+      include: { empresa: true },
+      orderBy: { created_at: 'desc' },
+    });
+
+    let template = readFileSync(join(__dirname, 'templates', 'convenios.html'), 'utf-8');
+
+    const vigentes = data.filter(c => c.estado === 'vigente').length;
+    const vencidos = data.filter(c => new Date(c.fecha_fin) < new Date()).length;
+    const porVencer = data.filter(c => c.estado === 'vigente' && new Date(c.fecha_fin) < new Date(Date.now() + 30*24*60*60*1000)).length;
+
+    let tablaRows = '';
+    for (const c of data) {
+      tablaRows += `
+        <tr>
+          <td>${c.empresa?.razon_social || '-'}</td>
+          <td>${c.empresa?.ruc || '-'}</td>
+          <td>${c.tipo || '-'}</td>
+          <td>${new Date(c.fecha_inicio).toLocaleDateString()}</td>
+          <td>${new Date(c.fecha_fin).toLocaleDateString()}</td>
+          <td class="estado-${c.estado}">${c.estado}</td>
+        </tr>
+      `;
+    }
+
+    template = template.replace('{{fechaGeneracion}}', this.getFechaGeneracion());
+    template = template.replace('{{totalConvenios}}', data.length.toString());
+    template = template.replace('{{conveniosVigentes}}', vigentes.toString());
+    template = template.replace('{{conveniosVencidos}}', porVencer.toString());
+    template = template.replace('{{conveniosInactivos}}', vencidos.toString());
+    template = template.replace('{{contenidoTabla}}', tablaRows);
+    template = template.replace('{{anio}}', new Date().getFullYear().toString());
+
+    return this.generarPdf(template);
+  }
+}

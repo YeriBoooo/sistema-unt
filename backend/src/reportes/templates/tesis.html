@@ -4,43 +4,191 @@
     <meta charset="UTF-8">
     <title>Reporte de Tesis</title>
     <style>
-        body { font-family: Arial, sans-serif; margin: 40px; }
-        h1 { color: #1a56db; border-bottom: 2px solid #1a56db; }
-        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
-        th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
-        th { background-color: #1a56db; color: white; }
-        .footer { margin-top: 30px; font-size: 12px; text-align: center; color: #666; }
+        @page {
+            size: A4;
+            margin: 2cm;
+            @top-center {
+                content: "Sistema UNT - Prácticas y Tesis";
+                font-size: 9px;
+                color: #666;
+            }
+            @bottom-center {
+                content: "Página " counter(page) " de " counter(pages);
+                font-size: 9px;
+                color: #666;
+            }
+        }
+        
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { 
+            font-family: 'Segoe UI', Arial, sans-serif; 
+            font-size: 11px;
+            color: #333;
+        }
+        
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+            padding-bottom: 15px;
+            border-bottom: 3px solid #0A1C2E;
+        }
+        .header h1 {
+            color: #0A1C2E;
+            font-size: 24px;
+            margin-bottom: 5px;
+        }
+        .header .subtitle {
+            font-size: 11px;
+            color: #E8A735;
+            letter-spacing: 2px;
+        }
+        .header .date {
+            color: #888;
+            font-size: 9px;
+            margin-top: 8px;
+        }
+        
+        .recomendaciones {
+            background: #f0f9ff;
+            border-left: 4px solid #0A1C2E;
+            padding: 12px 15px;
+            margin: 20px 0;
+            border-radius: 5px;
+        }
+        .recomendaciones h3 {
+            font-size: 12px;
+            color: #0A1C2E;
+            margin-bottom: 8px;
+        }
+        .recomendaciones ul {
+            margin-left: 20px;
+        }
+        .recomendaciones li {
+            font-size: 9px;
+            color: #555;
+            margin: 3px 0;
+        }
+        
+        .stats {
+            display: flex;
+            gap: 12px;
+            margin: 20px 0;
+            flex-wrap: wrap;
+        }
+        .stat-card {
+            flex: 1;
+            min-width: 100px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            padding: 12px;
+            text-align: center;
+            border: 1px solid #e9ecef;
+        }
+        .stat-card .number {
+            font-size: 24px;
+            font-weight: bold;
+            color: #0A1C2E;
+        }
+        .stat-card .label {
+            font-size: 9px;
+            color: #888;
+            margin-top: 5px;
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+        }
+        th {
+            background: #0A1C2E;
+            color: white;
+            padding: 8px 6px;
+            text-align: left;
+            font-size: 10px;
+            font-weight: 600;
+        }
+        td {
+            border-bottom: 1px solid #e9ecef;
+            padding: 7px 6px;
+            font-size: 9px;
+            color: #444;
+        }
+        
+        .estado-propuesta { color: #f59e0b; font-weight: 500; }
+        .estado-desarrollo { color: #3b82f6; font-weight: 500; }
+        .estado-sustentacion { color: #8b5cf6; font-weight: 500; }
+        .estado-culminado { color: #10b981; font-weight: 500; }
+        
+        .footer {
+            margin-top: 30px;
+            padding-top: 15px;
+            border-top: 1px solid #e9ecef;
+            text-align: center;
+            font-size: 8px;
+            color: #999;
+        }
     </style>
 </head>
 <body>
-    <h1>Reporte de Tesis</h1>
-    <p>Fecha de generación: {{fecha}}</p>
+
+    <div class="header">
+        <h1>🎓 Reporte de Proyectos de Tesis</h1>
+        <div class="subtitle">UNIVERSIDAD NACIONAL DE TRUJILLO - SISTEMA DE GESTIÓN</div>
+        <div class="date">Generado: {{fechaGeneracion}}</div>
+    </div>
+
+    <div class="stats">
+        <div class="stat-card">
+            <div class="number">{{totalTesis}}</div>
+            <div class="label">Total Tesis</div>
+        </div>
+        <div class="stat-card">
+            <div class="number">{{tesisDesarrollo}}</div>
+            <div class="label">En Desarrollo</div>
+        </div>
+        <div class="stat-card">
+            <div class="number">{{tesisSustentacion}}</div>
+            <div class="label">Sustentación</div>
+        </div>
+        <div class="stat-card">
+            <div class="number">{{tesisCulminado}}</div>
+            <div class="label">Culminadas</div>
+        </div>
+    </div>
+
+    <h2 style="font-size: 13px; margin: 15px 0 5px 0; color: #0A1C2E;">📋 Listado de Proyectos</h2>
+
     <table>
         <thead>
             <tr>
-                <th>Título</th>
                 <th>Estudiante</th>
+                <th>Código</th>
+                <th>Título</th>
                 <th>Asesor Principal</th>
                 <th>Estado</th>
-                <th>Fecha Inicio</th>
-                <th>Nota Final</th>
+                <th>Avances</th>
             </tr>
         </thead>
         <tbody>
-            {{#each data}}
-            <tr>
-                <td>{{this.titulo}}</td>
-                <td>{{this.estudiante.usuario.nombres}} {{this.estudiante.usuario.apellidos}}</td>
-                <td>{{this.asesor_principal.usuario.nombres}} {{this.asesor_principal.usuario.apellidos}}</td>
-                <td>{{this.estado}}</td>
-                <td>{{this.fecha_inicio}}</td>
-                <td>{{this.acta.nota_final}}</td>
-            </tr>
-            {{/each}}
+            {{contenidoTabla}}
         </tbody>
     </table>
-    <div class="footer">
-        <p>Sistema de Gestión de Prácticas y Tesis - Universidad Nacional de Trujillo</p>
+
+    <div class="recomendaciones">
+        <h3>📋 Recomendaciones</h3>
+        <ul>
+            <li>Revise periódicamente el estado de las tesis para mantener el seguimiento adecuado.</li>
+            <li>Los proyectos en estado "Sustentación" requieren atención prioritaria para la programación del jurado.</li>
+            <li>Utilice los filtros de fecha para generar reportes de períodos académicos específicos.</li>
+            <li>Verifique que los avances de tesis estén siendo revisados oportunamente por los asesores.</li>
+        </ul>
     </div>
+
+    <div class="footer">
+        <p>Sistema de Gestión de Prácticas Preprofesionales y Tesis - UNT</p>
+        <p>© {{anio}} - Universidad Nacional de Trujillo | Escuela de Ingeniería de Sistemas</p>
+    </div>
+
 </body>
 </html>
