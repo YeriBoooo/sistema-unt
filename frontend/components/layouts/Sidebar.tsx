@@ -28,18 +28,18 @@ interface Rol {
 }
 
 const menuItems = [
-  { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard, roles: ['admin', 'coordinador', 'asesor', 'estudiante', 'empresa'] },
-  { href: '/practicas', label: 'Prácticas', icon: Briefcase, roles: ['admin', 'coordinador', 'asesor', 'estudiante', 'empresa'] },
+  { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard, roles: ['admin', 'coordinador', 'asesor', 'estudiante', 'empresa', 'secretaria'] },
+  { href: '/practicas', label: 'Prácticas', icon: Briefcase, roles: ['admin', 'coordinador', 'asesor', 'estudiante', 'empresa', 'secretaria'] },
   { href: '/practicas/mis-postulaciones', label: 'Mis postulaciones', icon: Send, roles: ['estudiante'] },
-  // ✅ CORREGIDO: Para estudiantes va a /tesis
+  // ✅ Para estudiantes va a /tesis
   { href: '/tesis', label: 'Tesis', icon: BookOpen, roles: ['estudiante'] },
-  // ✅ Para admin, coordinador, asesor: Tesis general
-  { href: '/tesis', label: 'Tesis', icon: FileText, roles: ['admin', 'coordinador', 'asesor'] },
+  // ✅ Para admin, coordinador, asesor, secretaria
+  { href: '/tesis', label: 'Tesis', icon: FileText, roles: ['admin', 'coordinador', 'asesor', 'secretaria'] },
   { href: '/seguimiento', label: 'Seguimiento', icon: ClipboardList, roles: ['asesor', 'admin'] },
-  { href: '/estudiantes', label: 'Estudiantes', icon: Users, roles: ['admin', 'coordinador'] },
-  { href: '/empresas', label: 'Empresas', icon: Building2, roles: ['admin', 'coordinador'] },
-  { href: '/reportes', label: 'Reportes', icon: FileBarChart, roles: ['admin', 'coordinador'] },
-  { href: '/postulaciones', label: 'Postulaciones', icon: ClipboardList, roles: ['admin', 'coordinador'] },
+  { href: '/estudiantes', label: 'Estudiantes', icon: Users, roles: ['admin', 'coordinador', 'secretaria'] },
+  { href: '/empresas', label: 'Empresas', icon: Building2, roles: ['admin', 'coordinador', 'secretaria'] },
+  { href: '/reportes', label: 'Reportes', icon: FileBarChart, roles: ['admin', 'coordinador', 'secretaria'] },
+  { href: '/postulaciones', label: 'Postulaciones', icon: ClipboardList, roles: ['admin', 'coordinador', 'secretaria'] },
 ];
 
 export function Sidebar() {
@@ -48,7 +48,6 @@ export function Sidebar() {
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [userRole, setUserRole] = useState('');
 
-  // useEffect corregido para obtener el rol (sin errores de TypeScript)
   useEffect(() => {
     const firstRole = user?.roles?.[0] as Rol | string | undefined;
     if (firstRole) {
@@ -165,12 +164,13 @@ export function Sidebar() {
                 {user?.nombres} {user?.apellidos}
               </p>
               <p className="text-[11px] text-white/40 truncate">{user?.email}</p>
-              <span className="inline-block text-[10px] font-medium px-2.5 py-0.5 rounded-full bg-[#E8A735]/20 text-[#E8A735] mt-1">
+              <span className="inline-block text-[10px] font-medium px-2.5 py-0.5 rounded-full bg-[#E8A735]/20 text-[#E8A735] mt-1 capitalize">
                 {userRole === 'estudiante' ? 'Estudiante' : 
                  userRole === 'asesor' ? 'Asesor' :
                  userRole === 'admin' ? 'Administrador' :
                  userRole === 'coordinador' ? 'Coordinador' :
-                 userRole === 'empresa' ? 'Empresa' : userRole || 'Usuario'}
+                 userRole === 'empresa' ? 'Empresa' :
+                 userRole === 'secretaria' ? 'Secretaria' : userRole || 'Usuario'}
               </span>
             </div>
           )}
