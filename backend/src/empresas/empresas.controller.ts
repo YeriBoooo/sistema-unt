@@ -14,13 +14,13 @@ export class EmpresasController {
   ) {}
 
   @Get()
-  @Roles('admin', 'coordinador')
+  @Roles('admin', 'coordinador', 'secretaria')
   findAll(@Query('page') page = '1', @Query('limit') limit = '10') {
     return this.empresasService.findAll(parseInt(page), parseInt(limit));
   }
 
   @Get(':id')
-  @Roles('admin', 'coordinador')
+  @Roles('admin', 'coordinador', 'secretaria')
   findOne(@Param('id') id: string) {
     return this.empresasService.findOne(parseInt(id));
   }
@@ -45,7 +45,7 @@ export class EmpresasController {
 
   // Convenios
   @Get(':id/convenios')
-  @Roles('admin', 'coordinador')
+  @Roles('admin', 'coordinador', 'secretaria')
   getConvenios(@Param('id') id: string) {
     return this.conveniosService.findByEmpresa(parseInt(id));
   }

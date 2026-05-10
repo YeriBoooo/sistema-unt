@@ -11,7 +11,7 @@ export class ReportesController {
   constructor(private readonly reportesService: ReportesService) {}
 
   @Post('practicas')
-  @Roles('admin', 'coordinador')
+  @Roles('admin', 'coordinador', 'secretaria')
   async generarPracticas(@Body() filtros: any, @Res() res: Response) {
     const pdf = await this.reportesService.generarReportePracticas(filtros);
     res.set({
@@ -22,7 +22,7 @@ export class ReportesController {
   }
 
   @Post('tesis')
-  @Roles('admin', 'coordinador')
+  @Roles('admin', 'coordinador', 'secretaria')
   async generarTesis(@Body() filtros: any, @Res() res: Response) {
     const pdf = await this.reportesService.generarReporteTesis(filtros);
     res.set({
@@ -33,7 +33,7 @@ export class ReportesController {
   }
 
   @Post('convenios')
-  @Roles('admin', 'coordinador')
+  @Roles('admin', 'coordinador', 'secretaria')
   async generarConvenios(@Body() filtros: any, @Res() res: Response) {
     const pdf = await this.reportesService.generarReporteConvenios(filtros);
     res.set({

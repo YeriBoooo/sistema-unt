@@ -18,13 +18,13 @@ export class EstudiantesController {
   }
 
   @Get()
-  @Roles('admin', 'coordinador')
+  @Roles('admin', 'coordinador', 'secretaria')
   findAll(@Query('page') page = '1', @Query('limit') limit = '10') {
     return this.estudiantesService.findAll(parseInt(page), parseInt(limit));
   }
 
   @Get(':id')
-  @Roles('admin', 'coordinador', 'asesor')
+  @Roles('admin', 'coordinador', 'asesor', 'secretaria')
   findOne(@Param('id') id: string) {
     return this.estudiantesService.findOne(parseInt(id));
   }

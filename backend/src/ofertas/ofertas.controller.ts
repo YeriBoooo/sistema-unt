@@ -21,6 +21,7 @@ export class OfertasController {
   }
 
   @Get()
+  @Roles('admin', 'coordinador', 'empresa', 'secretaria')
   async findAll(@Query('page') page = '1', @Query('limit') limit = '10') {
     return this.ofertasService.findAll(parseInt(page), parseInt(limit));
   }
@@ -40,7 +41,7 @@ export class OfertasController {
   }
 
   @Get(':id/postulaciones')
-  @Roles('admin', 'coordinador')
+  @Roles('admin', 'coordinador', 'secretaria')
   async getPostulacionesByOferta(@Param('id') id: string) {
     return this.ofertasService.getPostulacionesByOferta(parseInt(id));
   }
@@ -53,6 +54,7 @@ export class OfertasController {
   }
 
   @Get(':id')
+  @Roles('admin', 'coordinador', 'empresa', 'estudiante', 'secretaria')
   async findOne(@Param('id') id: string) {
     return this.ofertasService.findOne(parseInt(id));
   }
@@ -77,7 +79,7 @@ export class OfertasController {
   }
 
   @Patch('postulaciones/:postulacionId/estado')
-  @Roles('admin', 'coordinador', 'asesor')
+  @Roles('admin', 'coordinador', 'asesor', 'secretaria')
   async updateEstadoPostulacion(
     @Param('postulacionId') postulacionId: string,
     @Body('estado') estado: string,

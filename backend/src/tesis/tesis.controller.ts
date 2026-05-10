@@ -36,7 +36,7 @@ export class TesisController {
   }
 
   @Get('avances/:avanceId')
-  @Roles('asesor', 'admin')
+  @Roles('asesor', 'admin', 'secretaria')
   async getAvanceById(@Param('avanceId') avanceId: string) {
     return this.avancesService.findOne(parseInt(avanceId));
   }
@@ -48,7 +48,7 @@ export class TesisController {
   }
 
   @Get()
-  @Roles('admin', 'coordinador', 'asesor')
+  @Roles('admin', 'coordinador', 'asesor', 'secretaria')
   async findAll(@Query('page') page = '1', @Query('limit') limit = '10', @CurrentUser() user: any) {
     if (user.roles?.includes('asesor')) {
       const asesor = await this.tesisService.getAsesorByUsuarioId(user.id);
@@ -64,7 +64,6 @@ export class TesisController {
     return this.tesisService.create(estudiante.id, createTesisDto);
   }
 
-  // Endpoint para subir archivo de avance
   @Post(':id/avances/upload')
   @Roles('estudiante')
   @UseInterceptors(FileInterceptor('file', {
@@ -101,7 +100,6 @@ export class TesisController {
     });
   }
 
-  // ✅ Endpoint para registrar acta con archivo PDF
   @Post(':id/acta')
   @Roles('admin', 'coordinador')
   @UseInterceptors(FileInterceptor('file', {
@@ -151,19 +149,19 @@ export class TesisController {
   }
 
   @Get(':id')
-  @Roles('admin', 'coordinador', 'asesor', 'estudiante')
+  @Roles('admin', 'coordinador', 'asesor', 'estudiante', 'secretaria')
   findOne(@Param('id') id: string) {
     return this.tesisService.findOne(parseInt(id));
   }
 
   @Get(':id/avances')
-  @Roles('admin', 'coordinador', 'asesor', 'estudiante')
+  @Roles('admin', 'coordinador', 'asesor', 'estudiante', 'secretaria')
   async getAvances(@Param('id') id: string) {
     return this.avancesService.findByTesis(parseInt(id));
   }
 
   @Get(':id/acta')
-  @Roles('admin', 'coordinador')
+  @Roles('admin', 'coordinador', 'secretaria')
   async getActa(@Param('id') id: string) {
     return this.tesisService.getActa(parseInt(id));
   }
