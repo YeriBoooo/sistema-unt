@@ -2,20 +2,10 @@
 
 import { useQuery } from '@tanstack/react-query';
 import { apiFetch } from '@/lib/api/client';
+import { useParams } from 'next/navigation';
 import { useAuth } from '@/lib/hooks/useAuth';
-import { useState } from 'react';
 import Link from 'next/link';
-import { 
-  Building2, 
-  Search, 
-  Plus, 
-  Edit, 
-  Trash2, 
-  Eye,
-  Phone,
-  Mail,
-  FileText
-} from 'lucide-react';
+import { ArrowLeft, Building2, Phone, Mail, MapPin, FileText, Edit } from 'lucide-react';
 
 interface Empresa {
   id: number;
@@ -28,38 +18,19 @@ interface Empresa {
   convenio_activo: boolean;
 }
 
-export default function EmpresasPage() {
+export default function DetalleEmpresaPage() {
+  const { id } = useParams();
   const { user } = useAuth();
-  const [searchTerm, setSearchTerm] = useState('');
 
   const userRole = user?.roles?.[0] || '';
   const isAdmin = userRole === 'admin';
-  const isSecretaria = userRole === 'secretaria';
-  
-  const canCreate = isAdmin;
-  const canEdit = isAdmin;
-  const canDelete = isAdmin;
 
   const { data: response, isLoading } = useQuery({
-    queryKey: ['empresas'],
-    queryFn: () => apiFetch<any>('/empresas'),
+    queryKey: ['empresa', id],
+    queryFn: () => apiFetch<any>(`/empresas/${id}`),
   });
 
-  let empresas: Empresa[] = [];
-  
-  if (Array.isArray(response)) {
-    empresas = response;
-  } else if (response?.data && Array.isArray(response.data)) {
-    empresas = response.data;
-  } else if (response?.data?.data && Array.isArray(response.data.data)) {
-    empresas = response.data.data;
-  }
-
-  const filteredEmpresas = empresas.filter(empresa =>
-    empresa.razon_social?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    empresa.ruc?.includes(searchTerm) ||
-    empresa.representante?.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const empresa: Empresa = response?.data;
 
   if (isLoading) {
     return (
@@ -69,123 +40,85 @@ export default function EmpresasPage() {
     );
   }
 
+  if (!empresa) {
+    return (
+      <div className="max-w-4xl mx-auto px-4 py-12 text-center">
+        <p className="text-gray-500">Empresa no encontrada</p>
+        <Link href="/empresas" className="text-blue-600 mt-2 inline-block">Volver a empresas</Link>
+      </div>
+    );
+  }
+
   return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="px-4 py-6 sm:px-6">
-        <div className="mb-6">
-          <div className="flex justify-between items-center">
-            <div>
-              <h1 className="text-2xl font-semibold text-gray-800">Empresas</h1>
-              <p className="text-sm text-gray-500 mt-1">Gestión de empresas convenio</p>
+    <div className="max-w-4xl mx-auto px-4 py-6">
+      <div className="flex justify-between items-center mb-6">
+        <Link href="/empresas" className="inline-flex items-center gap-1 text-sm text-gray-500 hover:text-gray-700">
+          <ArrowLeft className="h-4 w-4" />
+          Volver a empresas
+        </Link>
+        {isAdmin && (
+          <Link href={`/empresas/${id}/editar`} className="inline-flex items-center gap-1 px-3 py-1.5 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700">
+            <Edit className="h-4 w-4" />
+            Editar empresa
+          </Link>
+        )}
+      </div>
+
+      <div className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
+        <div className="p-6 border-b border-gray-100 bg-gradient-to-r from-green-50/50 to-emerald-50/50">
+          <div className="flex items-center gap-3">
+            <div className="p-2 bg-green-100 rounded-xl">
+              <Building2 className="h-6 w-6 text-green-600" />
             </div>
-            {canCreate && (
-              <Link
-                href="/empresas/nueva"
-                className="px-4 py-2 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700 flex items-center gap-2"
-              >
-                <Plus className="h-4 w-4" />
-                Nueva empresa
-              </Link>
-            )}
+            <div>
+              <h1 className="text-xl font-semibold text-gray-800">{empresa.razon_social}</h1>
+              <p className="text-sm text-gray-500">RUC: {empresa.ruc}</p>
+            </div>
           </div>
         </div>
 
-        <div className="mb-6">
-          <div className="relative max-w-md">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-            <input
-              type="text"
-              placeholder="Buscar por empresa, RUC o representante..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-9 pr-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-            />
+        <div className="p-6 space-y-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="flex items-center gap-3">
+              <MapPin className="h-4 w-4 text-gray-400" />
+              <div>
+                <p className="text-xs text-gray-400">Dirección</p>
+                <p className="text-sm text-gray-700">{empresa.direccion || 'No registrada'}</p>
+              </div>
+            </div>
+            <div className="flex items-center gap-3">
+              <Phone className="h-4 w-4 text-gray-400" />
+              <div>
+                <p className="text-xs text-gray-400">Teléfono</p>
+                <p className="text-sm text-gray-700">{empresa.telefono || 'No registrado'}</p>
+              </div>
+            </div>
+            <div className="flex items-center gap-3">
+              <Mail className="h-4 w-4 text-gray-400" />
+              <div>
+                <p className="text-xs text-gray-400">Email de contacto</p>
+                <p className="text-sm text-gray-700">{empresa.email_contacto || 'No registrado'}</p>
+              </div>
+            </div>
+            <div className="flex items-center gap-3">
+              <FileText className="h-4 w-4 text-gray-400" />
+              <div>
+                <p className="text-xs text-gray-400">Convenio</p>
+                <p className={`text-sm font-medium ${empresa.convenio_activo ? 'text-green-600' : 'text-red-600'}`}>
+                  {empresa.convenio_activo ? 'Activo' : 'Inactivo'}
+                </p>
+              </div>
+            </div>
           </div>
-        </div>
 
-        <div className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead className="bg-gray-50 border-b border-gray-100">
-                <tr>
-                  <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase">RUC</th>
-                  <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase">Razón Social</th>
-                  <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase">Contacto</th>
-                  <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase">Representante</th>
-                  <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase">Convenio</th>
-                  <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase">Acciones</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-100">
-                {filteredEmpresas.length === 0 ? (
-                  <tr>
-                    <td colSpan={6} className="text-center py-8 text-gray-500">
-                      No hay empresas registradas
-                    </td>
-                  </tr>
-                ) : (
-                  filteredEmpresas.map((empresa) => (
-                    <tr key={empresa.id} className="hover:bg-gray-50 transition-colors">
-                      <td className="px-4 py-3 text-sm font-medium text-gray-800">
-                        {empresa.ruc}
-                      </td>
-                      <td className="px-4 py-3">
-                        <div className="flex items-center gap-2">
-                          <div className="h-8 w-8 rounded-full bg-green-100 flex items-center justify-center">
-                            <Building2 className="h-4 w-4 text-green-600" />
-                          </div>
-                          <div>
-                            <p className="text-sm font-medium text-gray-800">
-                              {empresa.razon_social}
-                            </p>
-                          </div>
-                        </div>
-                      </td>
-                      <td className="px-4 py-3">
-                        <div className="flex items-center gap-1 text-sm text-gray-600">
-                          <Phone className="h-3 w-3" />
-                          {empresa.telefono || 'N/A'}
-                        </div>
-                        <div className="flex items-center gap-1 text-xs text-gray-400 mt-0.5">
-                          <Mail className="h-2.5 w-2.5" />
-                          {empresa.email_contacto || 'N/A'}
-                        </div>
-                      </td>
-                      <td className="px-4 py-3 text-sm text-gray-600">
-                        {empresa.representante || 'No especificado'}
-                      </td>
-                      <td className="px-4 py-3">
-                        <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium ${
-                          empresa.convenio_activo 
-                            ? 'bg-green-100 text-green-700' 
-                            : 'bg-red-100 text-red-700'
-                        }`}>
-                          <FileText className="h-2.5 w-2.5" />
-                          {empresa.convenio_activo ? 'Activo' : 'Inactivo'}
-                        </span>
-                      </td>
-                      <td className="px-4 py-3">
-                        <div className="flex items-center gap-2">
-                          <Link href={`/empresas/${empresa.id}`} className="p-1 text-blue-600 hover:bg-blue-50 rounded-lg">
-                            <Eye className="h-4 w-4" />
-                          </Link>
-                          {canEdit && (
-                            <Link href={`/empresas/${empresa.id}/editar`} className="p-1 text-green-600 hover:bg-green-50 rounded-lg">
-                              <Edit className="h-4 w-4" />
-                            </Link>
-                          )}
-                          {canDelete && (
-                            <button className="p-1 text-red-600 hover:bg-red-50 rounded-lg">
-                              <Trash2 className="h-4 w-4" />
-                            </button>
-                          )}
-                        </div>
-                      </td>
-                    </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
+          <div className="pt-3 border-t border-gray-100">
+            <div className="flex items-center gap-3">
+              <Building2 className="h-4 w-4 text-gray-400" />
+              <div>
+                <p className="text-xs text-gray-400">Representante</p>
+                <p className="text-sm text-gray-700">{empresa.representante || 'No especificado'}</p>
+              </div>
+            </div>
           </div>
         </div>
       </div>
