@@ -28,6 +28,7 @@ enum RolNombre {
   asesor
   estudiante
   empresa
+  secretaria
 }
 
 model Rol {
