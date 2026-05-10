@@ -2,6 +2,7 @@
 
 import { useQuery } from '@tanstack/react-query';
 import { apiFetch } from '@/lib/api/client';
+import { useAuth } from '@/lib/hooks/useAuth';
 import { useState } from 'react';
 import Link from 'next/link';
 import { 
@@ -37,17 +38,25 @@ interface Estudiante {
 }
 
 export default function EstudiantesPage() {
+  const { user } = useAuth();
   const [searchTerm, setSearchTerm] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
 
-  // ✅ Agregar limit=100 para traer todos los estudiantes
+  const userRole = user?.roles?.[0] || '';
+  const isAdmin = userRole === 'admin';
+  const isSecretaria = userRole === 'secretaria';
+  
+  // ✅ Secretaria y Admin pueden ver, pero solo Admin puede crear/editar/eliminar
+  const canCreate = isAdmin;
+  const canEdit = isAdmin;
+  const canDelete = isAdmin;
+
   const { data: response, isLoading, refetch } = useQuery({
     queryKey: ['estudiantes'],
     queryFn: () => apiFetch<any>('/estudiantes?limit=100'),
   });
 
-  // ✅ Extraer estudiantes
   let estudiantes: Estudiante[] = [];
   const responseData = response as any;
 
@@ -59,14 +68,12 @@ export default function EstudiantesPage() {
     estudiantes = responseData;
   }
 
-  // ✅ Filtrar por búsqueda
   const filteredEstudiantes = estudiantes.filter(estudiante =>
     estudiante.usuario?.nombres?.toLowerCase().includes(searchTerm.toLowerCase()) ||
     estudiante.usuario?.apellidos?.toLowerCase().includes(searchTerm.toLowerCase()) ||
     estudiante.codigo_universitario?.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  // ✅ Paginación local
   const totalPages = Math.ceil(filteredEstudiantes.length / itemsPerPage);
   const paginatedEstudiantes = filteredEstudiantes.slice(
     (currentPage - 1) * itemsPerPage,
@@ -74,6 +81,7 @@ export default function EstudiantesPage() {
   );
 
   const handleDelete = async (id: number, nombre: string) => {
+    if (!canDelete) return;
     if (!confirm(`¿Estás seguro de eliminar a ${nombre}?`)) return;
     
     try {
@@ -102,13 +110,16 @@ export default function EstudiantesPage() {
               <h1 className="text-2xl font-semibold text-gray-800">Estudiantes</h1>
               <p className="text-sm text-gray-500 mt-1">Gestión de estudiantes universitarios</p>
             </div>
-            <Link
-              href="/estudiantes/nuevo"
-              className="px-4 py-2 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700 flex items-center gap-2 transition-colors"
-            >
-              <Plus className="h-4 w-4" />
-              Nuevo estudiante
-            </Link>
+            {/* ✅ Solo admin ve el botón "Nuevo estudiante" */}
+            {canCreate && (
+              <Link
+                href="/estudiantes/nuevo"
+                className="px-4 py-2 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700 flex items-center gap-2 transition-colors"
+              >
+                <Plus className="h-4 w-4" />
+                Nuevo estudiante
+              </Link>
+            )}
           </div>
         </div>
 
@@ -195,12 +206,18 @@ export default function EstudiantesPage() {
                           <Link href={`/estudiantes/${estudiante.id}`} className="p-1 text-blue-600 hover:bg-blue-50 rounded-lg">
                             <Eye className="h-4 w-4" />
                           </Link>
-                          <Link href={`/estudiantes/${estudiante.id}/editar`} className="p-1 text-green-600 hover:bg-green-50 rounded-lg">
-                            <Edit className="h-4 w-4" />
-                          </Link>
-                          <button onClick={() => handleDelete(estudiante.id, `${estudiante.usuario?.nombres} ${estudiante.usuario?.apellidos}`)} className="p-1 text-red-600 hover:bg-red-50 rounded-lg">
-                            <Trash2 className="h-4 w-4" />
-                          </button>
+                          {/* ✅ Solo admin ve botón editar */}
+                          {canEdit && (
+                            <Link href={`/estudiantes/${estudiante.id}/editar`} className="p-1 text-green-600 hover:bg-green-50 rounded-lg">
+                              <Edit className="h-4 w-4" />
+                            </Link>
+                          )}
+                          {/* ✅ Solo admin ve botón eliminar */}
+                          {canDelete && (
+                            <button onClick={() => handleDelete(estudiante.id, `${estudiante.usuario?.nombres} ${estudiante.usuario?.apellidos}`)} className="p-1 text-red-600 hover:bg-red-50 rounded-lg">
+                              <Trash2 className="h-4 w-4" />
+                            </button>
+                          )}
                         </div>
                       </td>
                     </tr>

@@ -2,6 +2,7 @@
 
 import { useQuery } from '@tanstack/react-query';
 import { apiFetch } from '@/lib/api/client';
+import { useAuth } from '@/lib/hooks/useAuth';
 import { useState } from 'react';
 import Link from 'next/link';
 import { 
@@ -28,14 +29,22 @@ interface Empresa {
 }
 
 export default function EmpresasPage() {
+  const { user } = useAuth();
   const [searchTerm, setSearchTerm] = useState('');
+
+  const userRole = user?.roles?.[0] || '';
+  const isAdmin = userRole === 'admin';
+  const isSecretaria = userRole === 'secretaria';
+  
+  const canCreate = isAdmin;
+  const canEdit = isAdmin;
+  const canDelete = isAdmin;
 
   const { data: response, isLoading } = useQuery({
     queryKey: ['empresas'],
     queryFn: () => apiFetch<any>('/empresas'),
   });
 
-  // ✅ CORREGIDO: Extraer el array correctamente
   let empresas: Empresa[] = [];
   
   if (Array.isArray(response)) {
@@ -63,24 +72,24 @@ export default function EmpresasPage() {
   return (
     <div className="min-h-screen bg-gray-50">
       <div className="px-4 py-6 sm:px-6">
-        {/* Header */}
         <div className="mb-6">
           <div className="flex justify-between items-center">
             <div>
               <h1 className="text-2xl font-semibold text-gray-800">Empresas</h1>
               <p className="text-sm text-gray-500 mt-1">Gestión de empresas convenio</p>
             </div>
-            <Link
-              href="/empresas/nueva"
-              className="px-4 py-2 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700 flex items-center gap-2"
-            >
-              <Plus className="h-4 w-4" />
-              Nueva empresa
-            </Link>
+            {canCreate && (
+              <Link
+                href="/empresas/nueva"
+                className="px-4 py-2 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700 flex items-center gap-2"
+              >
+                <Plus className="h-4 w-4" />
+                Nueva empresa
+              </Link>
+            )}
           </div>
         </div>
 
-        {/* Search */}
         <div className="mb-6">
           <div className="relative max-w-md">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
@@ -94,7 +103,6 @@ export default function EmpresasPage() {
           </div>
         </div>
 
-        {/* Table */}
         <div className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full">
@@ -158,31 +166,19 @@ export default function EmpresasPage() {
                       </td>
                       <td className="px-4 py-3">
                         <div className="flex items-center gap-2">
-                          <button
-                            onClick={() => window.location.href = `/empresas/${empresa.id}`}
-                            className="p-1 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
-                            title="Ver detalles"
-                          >
+                          <Link href={`/empresas/${empresa.id}`} className="p-1 text-blue-600 hover:bg-blue-50 rounded-lg">
                             <Eye className="h-4 w-4" />
-                          </button>
-                          <button
-                            onClick={() => window.location.href = `/empresas/${empresa.id}/editar`}
-                            className="p-1 text-green-600 hover:bg-green-50 rounded-lg transition-colors"
-                            title="Editar"
-                          >
-                            <Edit className="h-4 w-4" />
-                          </button>
-                          <button
-                            onClick={() => {
-                              if (confirm('¿Estás seguro de eliminar esta empresa?')) {
-                                // Lógica de eliminación
-                              }
-                            }}
-                            className="p-1 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-                            title="Eliminar"
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </button>
+                          </Link>
+                          {canEdit && (
+                            <Link href={`/empresas/${empresa.id}/editar`} className="p-1 text-green-600 hover:bg-green-50 rounded-lg">
+                              <Edit className="h-4 w-4" />
+                            </Link>
+                          )}
+                          {canDelete && (
+                            <button className="p-1 text-red-600 hover:bg-red-50 rounded-lg">
+                              <Trash2 className="h-4 w-4" />
+                            </button>
+                          )}
                         </div>
                       </td>
                     </tr>

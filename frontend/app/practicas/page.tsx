@@ -34,7 +34,6 @@ interface Oferta {
   };
 }
 
-// Animación
 const fadeUp = {
   hidden: { opacity: 0, y: 20 },
   visible: { opacity: 1, y: 0, transition: { duration: 0.4 } }
@@ -42,34 +41,25 @@ const fadeUp = {
 
 const getModalidadColor = (modalidad: string) => {
   switch (modalidad) {
-    case 'remota':
-      return 'bg-emerald-50 text-emerald-700 border-emerald-100';
-    case 'hibrida':
-      return 'bg-purple-50 text-purple-700 border-purple-100';
-    default:
-      return 'bg-blue-50 text-blue-700 border-blue-100';
+    case 'remota': return 'bg-emerald-50 text-emerald-700 border-emerald-100';
+    case 'hibrida': return 'bg-purple-50 text-purple-700 border-purple-100';
+    default: return 'bg-blue-50 text-blue-700 border-blue-100';
   }
 };
 
 const getModalidadIcon = (modalidad: string) => {
   switch (modalidad) {
-    case 'remota':
-      return '🏠';
-    case 'hibrida':
-      return '🌐';
-    default:
-      return '🏢';
+    case 'remota': return '🏠';
+    case 'hibrida': return '🌐';
+    default: return '🏢';
   }
 };
 
 const getModalidadTexto = (modalidad: string) => {
   switch (modalidad) {
-    case 'remota':
-      return 'Remota';
-    case 'hibrida':
-      return 'Híbrida';
-    default:
-      return 'Presencial';
+    case 'remota': return 'Remota';
+    case 'hibrida': return 'Híbrida';
+    default: return 'Presencial';
   }
 };
 
@@ -78,10 +68,14 @@ export default function OfertasPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [modalidadFilter, setModalidadFilter] = useState('');
 
-  // Verificar si el usuario puede crear ofertas
-  const canCreateOffer = user?.roles?.includes('admin') || 
-                         user?.roles?.includes('coordinador') || 
-                         user?.roles?.includes('empresa');
+  const userRole = user?.roles?.[0] || '';
+  const isAdmin = userRole === 'admin';
+  const isCoordinador = userRole === 'coordinador';
+  const isEmpresa = userRole === 'empresa';
+  const isSecretaria = userRole === 'secretaria';
+
+  // ✅ Solo admin, coordinador y empresa pueden crear ofertas
+  const canCreateOffer = isAdmin || isCoordinador || isEmpresa;
 
   const { data: ofertasList, isLoading } = useQuery({
     queryKey: ['ofertas'],
@@ -115,7 +109,6 @@ export default function OfertasPage() {
     <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-50">
       <div className="max-w-7xl mx-auto px-4 py-8 sm:px-6 lg:px-8">
         
-        {/* Header con botón elegante */}
         <div className="mb-8">
           <div className="flex items-center gap-2 mb-3">
             <div className="h-2 w-2 rounded-full bg-[#E8A735] animate-pulse" />
@@ -135,7 +128,7 @@ export default function OfertasPage() {
             </div>
             
             <div className="flex items-center gap-3">
-              {/* ✅ Botón elegante para crear oferta */}
+              {/* ✅ Solo admin, coordinador, empresa ven el botón */}
               {canCreateOffer && (
                 <Link href="/practicas/nueva">
                   <motion.button
@@ -219,7 +212,6 @@ export default function OfertasPage() {
                 whileHover={{ y: -4, transition: { duration: 0.2 } }}
                 className="group relative bg-white rounded-2xl border border-gray-100 shadow-sm hover:shadow-xl transition-all duration-300 overflow-hidden"
               >
-                {/* Badge de modalidad */}
                 <div className="absolute top-4 right-4 z-10">
                   <span className={`inline-flex items-center gap-1 text-[10px] font-medium px-2.5 py-1 rounded-full border ${getModalidadColor(oferta.modalidad)}`}>
                     <span>{getModalidadIcon(oferta.modalidad)}</span>
@@ -227,9 +219,7 @@ export default function OfertasPage() {
                   </span>
                 </div>
 
-                {/* Contenido */}
                 <div className="p-5">
-                  {/* Empresa */}
                   <div className="flex items-center gap-2 mb-3">
                     <div className="w-8 h-8 bg-gradient-to-br from-[#0A1C2E]/5 to-[#0A1C2E]/10 rounded-xl flex items-center justify-center">
                       <Building2 className="h-4 w-4 text-[#0A1C2E]" strokeWidth={1.5} />
@@ -239,12 +229,10 @@ export default function OfertasPage() {
                     </p>
                   </div>
 
-                  {/* Título */}
                   <h3 className="text-base font-semibold text-gray-800 line-clamp-1 mb-2 group-hover:text-[#0A1C2E] transition-colors">
                     {oferta.titulo}
                   </h3>
 
-                  {/* Detalles */}
                   <div className="flex items-center gap-3 mt-2 text-[11px] text-gray-400">
                     <span className="flex items-center gap-1">
                       <Calendar className="h-3 w-3" />
@@ -256,12 +244,10 @@ export default function OfertasPage() {
                     </span>
                   </div>
 
-                  {/* Descripción */}
                   <p className="text-xs text-gray-500 line-clamp-2 mt-3 leading-relaxed">
                     {oferta.descripcion}
                   </p>
 
-                  {/* Link de acción */}
                   <div className="mt-4 pt-3 border-t border-gray-100">
                     <Link
                       href={`/practicas/${oferta.id}`}
@@ -273,7 +259,6 @@ export default function OfertasPage() {
                   </div>
                 </div>
 
-                {/* Barra decorativa inferior */}
                 <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-gradient-to-r from-[#0A1C2E] to-[#E8A735] opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
               </motion.div>
             ))}

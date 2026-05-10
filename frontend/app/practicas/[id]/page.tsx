@@ -133,9 +133,9 @@ export default function DetalleOfertaPage() {
   const [asesorSeleccionado, setAsesorSeleccionado] = useState<number | null>(null);
   const [postulacionesData, setPostulacionesData] = useState<Postulacion[]>([]);
 
-  const canEdit = user?.roles?.includes('admin') || 
-                  user?.roles?.includes('coordinador') || 
-                  user?.roles?.includes('empresa');
+const canEdit = user?.roles?.includes('admin') || 
+                user?.roles?.includes('coordinador') || 
+                user?.roles?.includes('empresa');
 
   const canAssignAsesor = user?.roles?.includes('admin') || user?.roles?.includes('coordinador');
 

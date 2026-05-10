@@ -45,6 +45,14 @@ export default function GestionPostulacionesPage() {
   const queryClient = useQueryClient();
   const [filtro, setFiltro] = useState('todos');
 
+  const userRole = user?.roles?.[0] || '';
+  const isAdmin = userRole === 'admin';
+  const isCoordinador = userRole === 'coordinador';
+  const isSecretaria = userRole === 'secretaria';
+  
+  // ✅ Admin, coordinador y secretaria pueden gestionar postulaciones
+  const canManage = isAdmin || isCoordinador || isSecretaria;
+
   const { data: response, isLoading, refetch } = useQuery({
     queryKey: ['postulaciones', filtro],
     queryFn: () => {
@@ -54,11 +62,9 @@ export default function GestionPostulacionesPage() {
       }
       return apiFetch<any>(url);
     },
-    // ✅ CORREGIDO: Tipo explícito para el parámetro 'r'
-    enabled: !!user?.roles?.some((r: string) => r === 'admin' || r === 'coordinador'),
+    enabled: canManage,
   });
 
-  // ✅ CORREGIDO: extraer el array correctamente (response?.data?.data)
   const postulaciones: Postulacion[] = response?.data?.data || response?.data || [];
 
   const cambiarEstadoMutation = useMutation({
@@ -109,8 +115,7 @@ export default function GestionPostulacionesPage() {
     }
   };
 
-  // ✅ CORREGIDO: Tipo explícito para el parámetro 'r'
-  if (!user?.roles?.some((r: string) => r === 'admin' || r === 'coordinador')) {
+  if (!canManage) {
     return (
       <div className="flex items-center justify-center h-64">
         <div className="text-center">
@@ -222,7 +227,7 @@ export default function GestionPostulacionesPage() {
                     </div>
                   </div>
 
-                  {/* Acciones */}
+                  {/* Acciones - Admin, Coordinador y Secretaria pueden cambiar estado */}
                   <div className="mt-4 flex justify-end gap-2">
                     <Link
                       href={`/practicas/${postulacion.oferta?.id}`}
